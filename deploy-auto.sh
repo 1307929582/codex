@@ -65,7 +65,10 @@ JWT_SECRET=${JWT_SECRET}
 SERVER_PORT=12322
 
 # Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:12322
+# Leave empty to use same-origin proxy
+NEXT_PUBLIC_API_URL=
+# Internal backend URL for Next.js rewrites
+INTERNAL_API_URL=http://backend:12322
 EOF
 
     echo -e "${GREEN}✓${NC} 配置文件已生成"

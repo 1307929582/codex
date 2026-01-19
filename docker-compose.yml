@@ -47,7 +47,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:12322}
+        INTERNAL_API_URL: ${INTERNAL_API_URL:-http://backend:12322}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
     container_name: codex-frontend
     ports:
       - "12321:3000"

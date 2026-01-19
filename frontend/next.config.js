@@ -1,9 +1,15 @@
 /** @type {import('next').NextConfig} */
+const internalApiUrl = (process.env.INTERNAL_API_URL || 'http://backend:12322').replace(/\/$/, '');
+
 const nextConfig = {
   output: 'standalone',
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:12322',
+  async rewrites() {
+    return [
+      { source: '/api/:path*', destination: `${internalApiUrl}/api/:path*` },
+      { source: '/v1/:path*', destination: `${internalApiUrl}/v1/:path*` },
+      { source: '/health', destination: `${internalApiUrl}/health` },
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
