@@ -229,15 +229,38 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 				continue
 			}
 
+			// Try to parse as Codex response.completed event first
+			var codexEvent struct {
+				Type     string `json:"type"`
+				Response struct {
+					Usage struct {
+						InputTokens       int `json:"input_tokens"`
+						OutputTokens      int `json:"output_tokens"`
+						InputTokenDetails struct {
+							CachedTokens int `json:"cached_tokens"`
+						} `json:"input_tokens_details"`
+					} `json:"usage"`
+				} `json:"response"`
+			}
+
+			if err := json.Unmarshal([]byte(data), &codexEvent); err == nil && codexEvent.Type == "response.completed" {
+				// Codex/Responses API format
+				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
+				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
+				lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetails.CachedTokens
+				lastUsage.TotalTokens = codexEvent.Response.Usage.InputTokens + codexEvent.Response.Usage.OutputTokens
+				continue
+			}
+
+			// Try ChatGPT format
 			var chunk OpenAIResponse
 			if err := json.Unmarshal([]byte(data), &chunk); err == nil {
-				// Try ChatGPT API fields first
 				if chunk.Usage.TotalTokens > 0 {
 					lastUsage.PromptTokens = chunk.Usage.PromptTokens
 					lastUsage.CompletionTokens = chunk.Usage.CompletionTokens
 					lastUsage.TotalTokens = chunk.Usage.TotalTokens
 				} else if chunk.Usage.InputTokens > 0 || chunk.Usage.OutputTokens > 0 {
-					// Codex/Responses API uses different field names
+					// Direct usage format (non-event)
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
 					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
 					lastUsage.CachedTokens = chunk.Usage.InputTokenDetails.CachedTokens
