@@ -35,6 +35,7 @@ export default function UsagePage() {
               <TableHead>模型</TableHead>
               <TableHead>输入Token</TableHead>
               <TableHead>输出Token</TableHead>
+              <TableHead>缓存Token</TableHead>
               <TableHead>总Token</TableHead>
               <TableHead>费用</TableHead>
               <TableHead>延迟</TableHead>
@@ -44,13 +45,13 @@ export default function UsagePage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center h-24">
+                <TableCell colSpan={9} className="text-center h-24">
                   加载中...
                 </TableCell>
               </TableRow>
             ) : data?.data?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center h-24">
+                <TableCell colSpan={9} className="text-center h-24">
                   未找到使用记录。
                 </TableCell>
               </TableRow>
@@ -63,6 +64,13 @@ export default function UsagePage() {
                   <TableCell className="font-mono text-xs">{log.model}</TableCell>
                   <TableCell>{log.input_tokens}</TableCell>
                   <TableCell>{log.output_tokens}</TableCell>
+                  <TableCell>
+                    {log.cached_tokens > 0 ? (
+                      <span className="text-green-600 font-medium">{log.cached_tokens}</span>
+                    ) : (
+                      <span className="text-gray-400">0</span>
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{log.total_tokens}</TableCell>
                   <TableCell className="font-medium">${log.cost.toFixed(4)}</TableCell>
                   <TableCell>{log.latency_ms}ms</TableCell>
