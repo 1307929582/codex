@@ -245,10 +245,18 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 			if err := json.Unmarshal([]byte(data), &codexEvent); err == nil && codexEvent.Type == "response.completed" {
 				// Codex/Responses API format
+				log.Printf("[DEBUG] Codex response.completed: input_tokens=%d, output_tokens=%d, cached_tokens=%d",
+					codexEvent.Response.Usage.InputTokens,
+					codexEvent.Response.Usage.OutputTokens,
+					codexEvent.Response.Usage.InputTokenDetails.CachedTokens)
+
 				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
 				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
 				lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetails.CachedTokens
 				lastUsage.TotalTokens = codexEvent.Response.Usage.InputTokens + codexEvent.Response.Usage.OutputTokens
+
+				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d",
+					lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 				continue
 			}
 
@@ -280,8 +288,12 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Bill user after stream completes
 	if lastUsage.TotalTokens > 0 {
+		log.Printf("[DEBUG] Billing: model=%s, input=%d, output=%d, cached=%d",
+			model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+
 		cost, err := calculateCostWithCache(model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 		if err == nil {
+			log.Printf("[DEBUG] Cost calculated: $%.6f", cost)
 			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, cost, latencyMs)
 		}
 	} else if streamedChunks > 0 {
