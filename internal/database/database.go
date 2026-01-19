@@ -51,6 +51,7 @@ func AutoMigrate() error {
 		&models.Transaction{},
 		&models.SystemSettings{},
 		&models.AdminLog{},
+		&models.CodexUpstream{},
 	)
 }
 

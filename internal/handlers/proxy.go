@@ -14,6 +14,7 @@ import (
 	"codex-gateway/internal/codex"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
+	"codex-gateway/internal/upstream"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -108,22 +109,15 @@ func ProxyHandler(c *gin.Context) {
 }
 
 func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, startTime time.Time) {
-	// Get upstream config
-	var settings models.SystemSettings
-	if err := database.DB.First(&settings).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load settings"})
+	// Select upstream for this user (consistent hashing for session affinity)
+	upstream, err := upstream.GetSelector().SelectForUser(user.ID)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
 		return
 	}
 
-	if settings.OpenAIAPIKey == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "upstream API key not configured"})
-		return
-	}
-
-	baseURL := settings.OpenAIBaseURL
-	if baseURL == "" {
-		baseURL = "https://api.openai.com/v1"
-	}
+	baseURL := upstream.BaseURL
+	apiKeyStr := upstream.APIKey
 
 	// Ensure stream=true for upstream and request usage info
 	reqBody["stream"] = true
@@ -144,7 +138,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAIAPIKey)
+	httpReq.Header.Set("Authorization", "Bearer "+apiKeyStr)
 	httpReq.Header.Set("Accept", "text/event-stream")
 
 	// Send request
@@ -255,10 +249,17 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 }
 
 func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, startTime time.Time) {
+	// Select upstream for this user (consistent hashing for session affinity)
+	upstream, err := upstream.GetSelector().SelectForUser(user.ID)
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
+		return
+	}
+
 	// Force stream=false for non-streaming
 	reqBody["stream"] = false
 
-	upstreamResp, err := forwardToUpstream(c.Request.Context(), reqBody)
+	upstreamResp, err := forwardToUpstream(c.Request.Context(), reqBody, upstream.BaseURL, upstream.APIKey)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("upstream error: %v", err)})
 		return
@@ -280,21 +281,7 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	c.JSON(http.StatusOK, upstreamResp)
 }
 
-func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}) (*OpenAIResponse, error) {
-	var settings models.SystemSettings
-	if err := database.DB.First(&settings).Error; err != nil {
-		return nil, fmt.Errorf("failed to load settings: %w", err)
-	}
-
-	if settings.OpenAIAPIKey == "" {
-		return nil, fmt.Errorf("upstream API key not configured")
-	}
-
-	baseURL := settings.OpenAIBaseURL
-	if baseURL == "" {
-		baseURL = "https://api.openai.com/v1"
-	}
-
+func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, baseURL string, apiKey string) (*OpenAIResponse, error) {
 	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, err
@@ -306,7 +293,7 @@ func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}) (*Op
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAIAPIKey)
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {

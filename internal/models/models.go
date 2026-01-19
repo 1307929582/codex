@@ -94,3 +94,19 @@ type AdminLog struct {
 	IPAddress string    `gorm:"type:varchar(45)" json:"ip_address"`
 	CreatedAt time.Time `gorm:"index:idx_admin_logs" json:"created_at"`
 }
+
+type CodexUpstream struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
+	BaseURL     string    `gorm:"type:varchar(255);not null" json:"base_url"`
+	APIKey      string    `gorm:"type:varchar(255);not null" json:"api_key"`
+	Priority    int       `gorm:"default:0;index" json:"priority"` // Lower number = higher priority
+	Status      string    `gorm:"type:varchar(20);default:'active'" json:"status"` // active, disabled, unhealthy
+	Weight      int       `gorm:"default:1" json:"weight"` // For load balancing (not used with user affinity)
+	MaxRetries  int       `gorm:"default:3" json:"max_retries"`
+	Timeout     int       `gorm:"default:120" json:"timeout"` // Seconds
+	HealthCheck string    `gorm:"type:varchar(255)" json:"health_check"` // Health check endpoint
+	LastChecked *time.Time `json:"last_checked"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}

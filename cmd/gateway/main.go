@@ -40,6 +40,10 @@ func main() {
 		log.Fatal("Failed to seed Codex pricing:", err)
 	}
 
+	if err := database.SeedCodexUpstreams(); err != nil {
+		log.Fatal("Failed to seed Codex upstreams:", err)
+	}
+
 	// Initialize pricing service
 	pricingService := pricing.GetService()
 	if err := pricingService.Initialize(); err != nil {
@@ -122,6 +126,14 @@ func main() {
 
 			// Pricing Service Status
 			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
+
+			// Codex Upstream Management
+			admin.GET("/codex/upstreams", handlers.AdminListCodexUpstreams)
+			admin.GET("/codex/upstreams/:id", handlers.AdminGetCodexUpstream)
+			admin.POST("/codex/upstreams", handlers.AdminCreateCodexUpstream)
+			admin.PUT("/codex/upstreams/:id", handlers.AdminUpdateCodexUpstream)
+			admin.DELETE("/codex/upstreams/:id", handlers.AdminDeleteCodexUpstream)
+			admin.PUT("/codex/upstreams/:id/status", handlers.AdminUpdateCodexUpstreamStatus)
 		}
 	}
 
