@@ -14,6 +14,7 @@ import (
 	"codex-gateway/internal/handlers"
 	"codex-gateway/internal/middleware"
 	"codex-gateway/internal/pricing"
+	"codex-gateway/internal/upstream"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,11 @@ func main() {
 		log.Printf("Warning: Pricing service failed to initialize: %v", err)
 	}
 	defer pricingService.Stop()
+
+	// Initialize upstream health checker
+	healthChecker := upstream.GetHealthChecker()
+	healthChecker.Start()
+	defer healthChecker.Stop()
 
 	router := gin.Default()
 
@@ -134,6 +140,10 @@ func main() {
 			admin.PUT("/codex/upstreams/:id", handlers.AdminUpdateCodexUpstream)
 			admin.DELETE("/codex/upstreams/:id", handlers.AdminDeleteCodexUpstream)
 			admin.PUT("/codex/upstreams/:id/status", handlers.AdminUpdateCodexUpstreamStatus)
+
+			// Upstream Health Check
+			admin.GET("/codex/upstreams/health", handlers.AdminGetUpstreamHealth)
+			admin.POST("/codex/upstreams/health/check", handlers.AdminTriggerHealthCheck)
 		}
 	}
 
