@@ -5,7 +5,8 @@
 *.so
 *.dylib
 codex-gateway
-gateway
+/gateway
+cmd/gateway/gateway
 
 # Test binary
 *.test

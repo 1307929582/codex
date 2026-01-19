@@ -37,11 +37,19 @@ func Load() error {
 		DBPassword:      getEnv("DB_PASSWORD", ""),
 		DBName:          getEnv("DB_NAME", "codex_gateway"),
 		DBSSLMode:       getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:       getEnv("JWT_SECRET", "change-me-in-production"),
+		JWTSecret:       getEnv("JWT_SECRET", ""),
 	}
 
 	if AppConfig.OpenAIAPIKey == "" {
 		log.Fatal("OPENAI_API_KEY is required")
+	}
+
+	if AppConfig.JWTSecret == "" {
+		log.Fatal("JWT_SECRET is required")
+	}
+
+	if len(AppConfig.JWTSecret) < 32 {
+		log.Fatal("JWT_SECRET must be at least 32 characters")
 	}
 
 	return nil

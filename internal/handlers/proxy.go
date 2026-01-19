@@ -66,6 +66,12 @@ func ProxyHandler(c *gin.Context) {
 
 	req.Stream = false
 
+	// Pre-flight balance check to prevent zero-balance API calls
+	if user.Balance <= 0 {
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance"})
+		return
+	}
+
 	startTime := time.Now()
 
 	upstreamResp, err := forwardToOpenAI(c.Request.Context(), req)

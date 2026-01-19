@@ -45,8 +45,21 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		}
 
 		var user models.User
-		userID := claims["user_id"].(string)
-		if err := database.DB.First(&user, "id = ?", uuid.MustParse(userID)).Error; err != nil {
+		userIDStr, ok := claims["user_id"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID in token"})
+			c.Abort()
+			return
+		}
+
+		userID, err := uuid.Parse(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID format"})
+			c.Abort()
+			return
+		}
+
+		if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 			c.Abort()
 			return
