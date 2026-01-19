@@ -364,13 +364,10 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 	}
 
 	// Calculate costs for each token type
-	// Cached tokens are billed at a discounted rate (usually 50% of input price)
-	regularInputTokens := inputTokens - cachedTokens
-	if regularInputTokens < 0 {
-		regularInputTokens = 0
-	}
-
-	inputCost := (float64(regularInputTokens) / 1000.0) * pricing.InputPricePer1k
+	// Note: input_tokens and cached_tokens are separate in Codex API
+	// input_tokens = new tokens that need processing (full price)
+	// cached_tokens = tokens from cache (discounted price, usually 50% off)
+	inputCost := (float64(inputTokens) / 1000.0) * pricing.InputPricePer1k
 	cachedCost := (float64(cachedTokens) / 1000.0) * pricing.CachedInputPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
 
