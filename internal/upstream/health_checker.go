@@ -90,12 +90,22 @@ func (hc *HealthChecker) checkAllUpstreams() {
 		return
 	}
 
+	log.Printf("[HealthCheck] Found %d total upstreams", len(upstreams))
+
+	checkedCount := 0
 	for _, upstream := range upstreams {
 		// Only check active or unhealthy upstreams (skip manually disabled ones)
 		if upstream.Status == "active" || upstream.Status == "unhealthy" {
+			log.Printf("[HealthCheck] Checking upstream: %s (status: %s, base_url: %s)",
+				upstream.Name, upstream.Status, upstream.BaseURL)
 			go hc.checkUpstream(&upstream)
+			checkedCount++
+		} else {
+			log.Printf("[HealthCheck] Skipping upstream: %s (status: %s)", upstream.Name, upstream.Status)
 		}
 	}
+
+	log.Printf("[HealthCheck] Triggered health check for %d/%d upstreams", checkedCount, len(upstreams))
 }
 
 // checkUpstream checks a single upstream
@@ -162,6 +172,8 @@ func (hc *HealthChecker) checkUpstream(upstream *models.CodexUpstream) {
 
 // performHealthCheck performs actual health check
 func (hc *HealthChecker) performHealthCheck(upstream *models.CodexUpstream) bool {
+	log.Printf("[HealthCheck] Starting health check for %s at %s", upstream.Name, upstream.BaseURL)
+
 	ctx, cancel := context.WithTimeout(context.Background(), hc.timeout)
 	defer cancel()
 
@@ -181,9 +193,10 @@ func (hc *HealthChecker) performHealthCheck(upstream *models.CodexUpstream) bool
 	}
 
 	// Create HTTP request
-	httpReq, err := http.NewRequestWithContext(ctx, "POST",
-		upstream.BaseURL+"/chat/completions",
-		bytes.NewBuffer(reqBytes))
+	url := upstream.BaseURL + "/chat/completions"
+	log.Printf("[HealthCheck] Sending request to: %s", url)
+
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		log.Printf("[HealthCheck] Failed to create request for %s: %v", upstream.Name, err)
 		return false
@@ -191,6 +204,7 @@ func (hc *HealthChecker) performHealthCheck(upstream *models.CodexUpstream) bool
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+upstream.APIKey)
+	log.Printf("[HealthCheck] Using API Key: %s...", upstream.APIKey[:min(20, len(upstream.APIKey))])
 
 	// Send request
 	client := &http.Client{
@@ -205,11 +219,13 @@ func (hc *HealthChecker) performHealthCheck(upstream *models.CodexUpstream) bool
 	defer resp.Body.Close()
 
 	// Read response (limit to 1KB)
-	_, err = io.ReadAll(io.LimitReader(resp.Body, 1024))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
 	if err != nil {
 		log.Printf("[HealthCheck] Failed to read response from %s: %v", upstream.Name, err)
 		return false
 	}
+
+	log.Printf("[HealthCheck] Response from %s: status=%d, body=%s", upstream.Name, resp.StatusCode, string(body))
 
 	// Check status code
 	if resp.StatusCode >= 200 && resp.StatusCode < 500 {
@@ -222,6 +238,13 @@ func (hc *HealthChecker) performHealthCheck(upstream *models.CodexUpstream) bool
 	// 5xx errors mean server issues
 	log.Printf("[HealthCheck] ❌ Upstream %s returned error (status: %d)", upstream.Name, resp.StatusCode)
 	return false
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // GetFailureCount returns the current failure count for an upstream
