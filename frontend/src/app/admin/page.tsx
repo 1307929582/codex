@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Users, DollarSign, Key, TrendingUp, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, DollarSign, Activity, Key, ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -10,166 +10,125 @@ export default function AdminDashboard() {
     queryFn: () => adminApi.getOverview(),
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <DashboardSkeleton />;
 
-  const cards = [
+  const metrics = [
     {
-      title: '总用户数',
-      value: stats?.total_users || 0,
-      subtitle: `活跃用户: ${stats?.active_users || 0}`,
-      icon: Users,
-      gradient: 'from-blue-500 to-blue-600',
-      bgGradient: 'from-blue-50 to-blue-100',
-      trend: '+12%',
-      trendUp: true,
-    },
-    {
-      title: '总收入',
+      label: '总收入',
       value: `$${(stats?.total_revenue || 0).toFixed(2)}`,
-      subtitle: `今日: $${(stats?.today_revenue || 0).toFixed(2)}`,
+      change: '+12.5%',
+      trend: 'up',
       icon: DollarSign,
-      gradient: 'from-green-500 to-emerald-600',
-      bgGradient: 'from-green-50 to-emerald-100',
-      trend: '+8%',
-      trendUp: true,
+      desc: '全部收入'
     },
     {
-      title: '总消费',
-      value: `$${(stats?.total_cost || 0).toFixed(2)}`,
-      subtitle: `利润: $${((stats?.total_revenue || 0) - (stats?.total_cost || 0)).toFixed(2)}`,
-      icon: TrendingUp,
-      gradient: 'from-purple-500 to-purple-600',
-      bgGradient: 'from-purple-50 to-purple-100',
-      trend: '+15%',
-      trendUp: true,
+      label: '活跃用户',
+      value: stats?.active_users || 0,
+      change: '+2.1%',
+      trend: 'up',
+      icon: Users,
+      desc: `共 ${stats?.total_users || 0} 个用户`
     },
     {
-      title: 'API密钥数',
+      label: 'API密钥',
       value: stats?.total_api_keys || 0,
-      subtitle: `今日请求: ${stats?.today_requests || 0}`,
+      change: '+5',
+      trend: 'neutral',
       icon: Key,
-      gradient: 'from-orange-500 to-orange-600',
-      bgGradient: 'from-orange-50 to-orange-100',
-      trend: '+5%',
-      trendUp: true,
+      desc: '活跃密钥'
+    },
+    {
+      label: '今日请求',
+      value: stats?.today_requests || 0,
+      change: '-1.2%',
+      trend: 'down',
+      icon: Activity,
+      desc: '每日流量'
     },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">系统概览</h1>
-        <p className="mt-2 text-sm text-gray-600">实时监控系统运行状态和关键指标</p>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">控制台</h1>
+        <p className="text-sm text-zinc-500">实时监控系统运行状态和关键指标</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {metrics.map((metric) => (
           <div
-            key={card.title}
-            className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-lg hover:ring-gray-900/10"
+            key={metric.label}
+            className="group relative overflow-hidden rounded-xl bg-white p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] ring-1 ring-zinc-200 transition-all hover:ring-zinc-300 hover:shadow-md"
           >
-            {/* Background Gradient */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 transition-opacity group-hover:opacity-100`}></div>
-
-            {/* Content */}
-            <div className="relative">
-              <div className="flex items-center justify-between">
-                <div className={`rounded-xl bg-gradient-to-br ${card.gradient} p-3 shadow-lg`}>
-                  <card.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className={`flex items-center gap-1 text-sm font-medium ${card.trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                  {card.trendUp ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                  {card.trend}
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-zinc-50 p-2 ring-1 ring-zinc-100">
+                <metric.icon className="h-4 w-4 text-zinc-500" />
               </div>
-
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                <p className="mt-2 text-3xl font-bold text-gray-900">{card.value}</p>
-                <p className="mt-1 text-sm text-gray-500">{card.subtitle}</p>
-              </div>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+                metric.trend === 'up' ? 'bg-emerald-50 text-emerald-700' :
+                metric.trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-zinc-50 text-zinc-600'
+              }`}>
+                {metric.trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> :
+                 metric.trend === 'down' ? <ArrowDownRight className="h-3 w-3" /> : null}
+                {metric.change}
+              </span>
+            </div>
+            <div className="mt-4">
+              <h3 className="text-sm font-medium text-zinc-500">{metric.label}</h3>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900">{metric.value}</p>
+              <p className="mt-1 text-xs text-zinc-400">{metric.desc}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">快速操作</h2>
-            <p className="mt-1 text-sm text-gray-600">常用管理功能快捷入口</p>
+      {/* Example Chart Area / Detailed Stats */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-zinc-900">系统健康状态</h3>
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
           </div>
-          <Activity className="h-5 w-5 text-gray-400" />
+          <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
+            <p className="text-sm text-zinc-400">活动图表可视化</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <a
-            href="/admin/users"
-            className="group relative overflow-hidden rounded-xl border border-gray-200 p-6 transition-all hover:border-blue-500 hover:shadow-md"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
-            <div className="relative">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 p-2 group-hover:bg-blue-200 transition-colors">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">用户管理</h3>
-                  <p className="mt-1 text-sm text-gray-500">查看和管理所有用户</p>
-                </div>
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/admin/settings"
-            className="group relative overflow-hidden rounded-xl border border-gray-200 p-6 transition-all hover:border-purple-500 hover:shadow-md"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
-            <div className="relative">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 p-2 group-hover:bg-purple-200 transition-colors">
-                  <Key className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">系统设置</h3>
-                  <p className="mt-1 text-sm text-gray-500">配置系统参数和公告</p>
-                </div>
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/admin/logs"
-            className="group relative overflow-hidden rounded-xl border border-gray-200 p-6 transition-all hover:border-orange-500 hover:shadow-md"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
-            <div className="relative">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-orange-100 p-2 group-hover:bg-orange-200 transition-colors">
-                  <Activity className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">操作日志</h3>
-                  <p className="mt-1 text-sm text-gray-500">查看管理员操作记录</p>
-                </div>
-              </div>
-            </div>
-          </a>
+        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+           <div className="mb-4">
+            <h3 className="font-semibold text-zinc-900">快速访问</h3>
+          </div>
+          <div className="grid gap-3">
+             {[
+               { name: '管理用户', href: '/admin/users' },
+               { name: '系统设置', href: '/admin/settings' },
+               { name: '查看日志', href: '/admin/logs' }
+             ].map((action) => (
+               <a
+                 key={action.name}
+                 href={action.href}
+                 className="flex w-full items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+               >
+                 {action.name}
+                 <ChevronRight className="h-4 w-4 text-zinc-400" />
+               </a>
+             ))}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse">
+      <div className="h-8 w-48 rounded bg-zinc-200"></div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-40 rounded-xl bg-zinc-200"></div>
+        ))}
+      </div>
+    </div>
+  )
 }
