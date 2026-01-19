@@ -49,7 +49,7 @@ export default function AdminLogsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {data?.logs.map((log) => (
+                  {data?.logs.map((log: any) => (
                     <tr key={log.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                         {new Date(log.created_at).toLocaleString('zh-CN')}
