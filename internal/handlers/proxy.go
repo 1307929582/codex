@@ -117,7 +117,7 @@ func forwardToOpenAI(ctx context.Context, req OpenAIRequest) (*OpenAIResponse, e
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		_, _ = io.ReadAll(io.LimitReader(resp.Body, 1024))
 		return nil, fmt.Errorf("upstream returned status %d", resp.StatusCode)
 	}
 

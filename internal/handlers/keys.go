@@ -71,7 +71,7 @@ func DeleteAPIKey(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 	id := c.Param("id")
 
-	if err := database.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.APIKey).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", id, user.ID).Delete(&models.APIKey{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete key"})
 		return
 	}

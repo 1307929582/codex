@@ -5,8 +5,43 @@
 **项目名称**: Codex Gateway
 **项目类型**: 商业级OpenAI API网关
 **开发时间**: 2026-01-19
+**当前版本**: v1.0.1 (Security Patch)
 **GitHub仓库**: https://github.com/1307929582/codex.git
 **开发模式**: 多模型协作（Claude + Codex + Gemini）
+
+---
+
+## 🔒 安全更新 (v1.0.1)
+
+**更新日期**: 2026-01-19
+
+### 已修复的关键漏洞
+
+1. **JWT中间件DoS漏洞** (CRITICAL)
+   - 修复 `uuid.MustParse()` panic问题
+   - 防止恶意JWT导致服务器崩溃
+
+2. **财务漏洞** (CRITICAL)
+   - 添加余额预检查
+   - 防止零余额用户调用OpenAI API
+
+3. **硬编码JWT密钥** (CRITICAL)
+   - 移除不安全的默认值
+   - 强制使用至少32字符的密钥
+
+4. **CORS配置** (HIGH)
+   - 添加CORS中间件
+   - 支持跨域请求
+
+5. **优雅关闭** (MEDIUM)
+   - 实现信号处理
+   - 防止数据丢失
+
+6. **前端XSS风险** (HIGH)
+   - 使用Zustand persist中间件
+   - 修复SSR hydration错误
+
+详细信息请查看 [SECURITY_FIXES.md](./SECURITY_FIXES.md)
 
 ---
 
@@ -267,9 +302,9 @@ docker-compose up -d
 ## 🙏 致谢
 
 本项目由以下AI模型协作完成：
-- **Claude Sonnet 4.5**: 主控架构师
+- **Claude Opus 4.5**: 主控架构师 + 安全审计
 - **Codex**: 后端代码生成
-- **Gemini**: 前端代码生成
+- **Gemini**: 前端代码生成 + 代码审计
 
 开发模式：多模型协作 + 交叉验证 + 人工审核
 
@@ -283,6 +318,6 @@ docker-compose up -d
 
 ---
 
-**项目状态**: ✅ 生产就绪
+**项目状态**: ✅ 生产就绪（已修复关键安全漏洞）
 **最后更新**: 2026-01-19
-**版本**: v1.0.0
+**版本**: v1.0.1 (Security Patch)
