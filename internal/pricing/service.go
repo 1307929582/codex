@@ -236,11 +236,16 @@ func (s *PricingService) syncToDatabase() {
 	log.Println("[Pricing] Syncing to database...")
 
 	synced := 0
+	updated := 0
+
 	for modelName, pricing := range s.pricingData {
 		// Only sync Codex models
 		if !strings.Contains(modelName, "codex") && !strings.Contains(modelName, "gpt-5") {
 			continue
 		}
+
+		inputPrice := pricing.InputCostPerToken * 1000000  // Convert to per 1K
+		outputPrice := pricing.OutputCostPerToken * 1000000
 
 		// Check if model exists
 		var existing models.ModelPricing
@@ -250,8 +255,8 @@ func (s *PricingService) syncToDatabase() {
 			// Create new pricing entry
 			newPricing := models.ModelPricing{
 				ModelName:        modelName,
-				InputPricePer1k:  pricing.InputCostPerToken * 1000000, // Convert to per 1K
-				OutputPricePer1k: pricing.OutputCostPerToken * 1000000,
+				InputPricePer1k:  inputPrice,
+				OutputPricePer1k: outputPrice,
 				MarkupMultiplier: 1.5,
 			}
 			if err := database.DB.Create(&newPricing).Error; err != nil {
@@ -259,10 +264,22 @@ func (s *PricingService) syncToDatabase() {
 				continue
 			}
 			synced++
+		} else {
+			// Update existing pricing if changed
+			if existing.InputPricePer1k != inputPrice || existing.OutputPricePer1k != outputPrice {
+				existing.InputPricePer1k = inputPrice
+				existing.OutputPricePer1k = outputPrice
+				if err := database.DB.Save(&existing).Error; err != nil {
+					log.Printf("[Pricing] Failed to update %s: %v", modelName, err)
+					continue
+				}
+				updated++
+				log.Printf("[Pricing] Updated %s: input=$%.6f, output=$%.6f", modelName, inputPrice/1000, outputPrice/1000)
+			}
 		}
 	}
 
-	log.Printf("[Pricing] Synced %d models to database", synced)
+	log.Printf("[Pricing] Synced %d new models, updated %d existing models", synced, updated)
 }
 
 // startUpdater starts the background update task
