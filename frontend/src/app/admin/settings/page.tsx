@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Server, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminSettings() {
   const queryClient = useQueryClient();
@@ -19,8 +20,6 @@ export default function AdminSettings() {
     default_balance: 0,
     min_recharge_amount: 10,
     registration_enabled: true,
-    openai_api_key: '',
-    openai_base_url: 'https://api.openai.com/v1',
   });
 
   useEffect(() => {
@@ -30,8 +29,6 @@ export default function AdminSettings() {
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
         registration_enabled: settings.registration_enabled ?? true,
-        openai_api_key: settings.openai_api_key || '',
-        openai_base_url: settings.openai_base_url || 'https://api.openai.com/v1',
       });
     }
   }, [settings]);
@@ -65,31 +62,24 @@ export default function AdminSettings() {
         </button>
       </div>
 
-      {/* Codex Configuration */}
-      <section className="grid gap-6 md:grid-cols-[200px_1fr]">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900">Codex配置</h2>
-          <p className="text-sm text-zinc-500">配置上游Codex服务</p>
-        </div>
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700">API密钥</label>
-            <input
-              type="password"
-              value={formData.openai_api_key}
-              onChange={(e) => setFormData({ ...formData, openai_api_key: e.target.value })}
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white focus:ring-2 focus:ring-zinc-900/10"
-              placeholder="sk-..."
-            />
+      {/* Codex Configuration Notice */}
+      <section className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+        <div className="flex items-start gap-4">
+          <div className="rounded-lg bg-blue-100 p-2">
+            <Server className="h-5 w-5 text-blue-600" />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700">Base URL</label>
-            <input
-              type="text"
-              value={formData.openai_base_url}
-              onChange={(e) => setFormData({ ...formData, openai_base_url: e.target.value })}
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white focus:ring-2 focus:ring-zinc-900/10"
-            />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-blue-900">Codex 上游配置已迁移</h3>
+            <p className="mt-1 text-sm text-blue-700">
+              Codex 配置现已移至专用的上游管理页面，支持多上游提供商、健康检查和用户会话亲和性。
+            </p>
+            <Link
+              href="/admin/upstreams"
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              前往 Codex 上游管理
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
