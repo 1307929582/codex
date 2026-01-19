@@ -33,6 +33,11 @@ func main() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
+	// Run custom migrations
+	if err := database.RunMigrations(); err != nil {
+		log.Fatal("Failed to run migrations:", err)
+	}
+
 	if err := database.SeedDefaultPricing(); err != nil {
 		log.Fatal("Failed to seed default pricing:", err)
 	}
