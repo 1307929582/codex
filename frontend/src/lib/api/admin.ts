@@ -82,4 +82,87 @@ export const adminApi = {
     }>('/api/admin/logs', { params });
     return response.data;
   },
+
+  // Codex Upstreams
+  getCodexUpstreams: async () => {
+    const response = await api.get<{
+      upstreams: Array<{
+        id: number;
+        name: string;
+        base_url: string;
+        api_key: string;
+        priority: number;
+        status: 'active' | 'disabled' | 'unhealthy';
+        weight: number;
+        max_retries: number;
+        timeout: number;
+        health_check: string;
+        last_checked: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+    }>('/api/admin/codex/upstreams');
+    return response.data;
+  },
+
+  getCodexUpstream: async (id: number) => {
+    const response = await api.get(`/api/admin/codex/upstreams/${id}`);
+    return response.data;
+  },
+
+  createCodexUpstream: async (data: {
+    name: string;
+    base_url: string;
+    api_key: string;
+    priority: number;
+    status: string;
+    weight: number;
+    max_retries: number;
+    timeout: number;
+  }) => {
+    const response = await api.post('/api/admin/codex/upstreams', data);
+    return response.data;
+  },
+
+  updateCodexUpstream: async (id: number, data: {
+    name: string;
+    base_url: string;
+    api_key: string;
+    priority: number;
+    status: string;
+    weight: number;
+    max_retries: number;
+    timeout: number;
+  }) => {
+    const response = await api.put(`/api/admin/codex/upstreams/${id}`, data);
+    return response.data;
+  },
+
+  deleteCodexUpstream: async (id: number) => {
+    const response = await api.delete(`/api/admin/codex/upstreams/${id}`);
+    return response.data;
+  },
+
+  updateCodexUpstreamStatus: async (id: number, status: 'active' | 'disabled' | 'unhealthy') => {
+    const response = await api.put(`/api/admin/codex/upstreams/${id}/status`, { status });
+    return response.data;
+  },
+
+  getUpstreamHealth: async () => {
+    const response = await api.get<{
+      upstreams: Array<{
+        id: number;
+        name: string;
+        status: string;
+        failure_count: number;
+        last_checked: string;
+      }>;
+    }>('/api/admin/codex/upstreams/health');
+    return response.data;
+  },
+
+  triggerHealthCheck: async () => {
+    const response = await api.post('/api/admin/codex/upstreams/health/check');
+    return response.data;
+  },
 };
