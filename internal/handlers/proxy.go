@@ -68,6 +68,9 @@ func ProxyHandler(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 	apiKey := c.MustGet("api_key").(models.APIKey)
 
+	// Get the original request path (e.g., /chat/completions, /responses, /completions)
+	requestPath := c.Request.URL.Path
+
 	// Parse request body
 	bodyBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -102,22 +105,22 @@ func ProxyHandler(c *gin.Context) {
 	startTime := time.Now()
 
 	if stream {
-		handleStreamingRequest(c, user, apiKey, reqBody, model, startTime)
+		handleStreamingRequest(c, user, apiKey, reqBody, model, requestPath, startTime)
 	} else {
-		handleNonStreamingRequest(c, user, apiKey, reqBody, model, startTime)
+		handleNonStreamingRequest(c, user, apiKey, reqBody, model, requestPath, startTime)
 	}
 }
 
-func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, startTime time.Time) {
+func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, requestPath string, startTime time.Time) {
 	// Select upstream for this user (consistent hashing for session affinity)
-	upstream, err := upstream.GetSelector().SelectForUser(user.ID)
+	upstreamObj, err := upstream.GetSelector().SelectForUser(user.ID)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
 		return
 	}
 
-	baseURL := upstream.BaseURL
-	apiKeyStr := upstream.APIKey
+	baseURL := upstreamObj.BaseURL
+	apiKeyStr := upstreamObj.APIKey
 
 	// Ensure stream=true for upstream and request usage info
 	reqBody["stream"] = true
@@ -130,8 +133,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		return
 	}
 
-	// Create upstream request
-	httpReq, err := http.NewRequestWithContext(c.Request.Context(), "POST", baseURL+"/chat/completions", bytes.NewBuffer(reqBytes))
+	// Create upstream request using the original request path
+	upstreamURL := baseURL + requestPath
+	httpReq, err := http.NewRequestWithContext(c.Request.Context(), "POST", upstreamURL, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
 		return
@@ -248,9 +252,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	}
 }
 
-func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, startTime time.Time) {
+func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, requestPath string, startTime time.Time) {
 	// Select upstream for this user (consistent hashing for session affinity)
-	upstream, err := upstream.GetSelector().SelectForUser(user.ID)
+	upstreamObj, err := upstream.GetSelector().SelectForUser(user.ID)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
 		return
@@ -259,7 +263,7 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	// Force stream=false for non-streaming
 	reqBody["stream"] = false
 
-	upstreamResp, err := forwardToUpstream(c.Request.Context(), reqBody, upstream.BaseURL, upstream.APIKey)
+	upstreamResp, err := forwardToUpstream(c.Request.Context(), reqBody, upstreamObj.BaseURL, upstreamObj.APIKey, requestPath)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("upstream error: %v", err)})
 		return
@@ -281,13 +285,15 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	c.JSON(http.StatusOK, upstreamResp)
 }
 
-func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, baseURL string, apiKey string) (*OpenAIResponse, error) {
+func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, baseURL string, apiKey string, requestPath string) (*OpenAIResponse, error) {
 	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/chat/completions", bytes.NewBuffer(reqBytes))
+	// Use the original request path
+	upstreamURL := baseURL + requestPath
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", upstreamURL, bytes.NewBuffer(reqBytes))
 	if err != nil {
 		return nil, err
 	}

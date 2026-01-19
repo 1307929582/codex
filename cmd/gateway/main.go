@@ -147,11 +147,21 @@ func main() {
 		}
 	}
 
-	// Data Plane API (OpenAI Proxy)
+	// Data Plane API (OpenAI/Codex Proxy)
 	api := router.Group("/v1")
 	api.Use(middleware.AuthMiddleware())
 	{
+		// ChatGPT API
 		api.POST("/chat/completions", handlers.ProxyHandler)
+
+		// Codex API (GitHub Copilot)
+		api.POST("/completions", handlers.ProxyHandler)
+		api.POST("/responses", handlers.ProxyHandler)
+		api.POST("/engines/:engine/completions", handlers.ProxyHandler)
+
+		// Other OpenAI APIs
+		api.POST("/edits", handlers.ProxyHandler)
+		api.POST("/embeddings", handlers.ProxyHandler)
 	}
 
 	log.Printf("Server starting on port %s", config.AppConfig.ServerPort)
