@@ -132,6 +132,7 @@ func main() {
 
 			// Pricing Service Status
 			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
+			admin.POST("/pricing/reset", handlers.AdminResetPricing)
 
 			// Codex Upstream Management
 			admin.GET("/codex/upstreams", handlers.AdminListCodexUpstreams)
