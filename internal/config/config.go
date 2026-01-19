@@ -26,9 +26,9 @@ func Load() error {
 	}
 
 	AppConfig = &Config{
-		ServerPort:   getEnv("SERVER_PORT", "8080"),
+		ServerPort:   getEnv("SERVER_PORT", "12322"),
 		DBHost:       getEnv("DB_HOST", "localhost"),
-		DBPort:       getEnv("DB_PORT", "5432"),
+		DBPort:       getEnv("DB_PORT", "5433"),
 		DBUser:       getEnv("DB_USER", "postgres"),
 		DBPassword:   getEnv("DB_PASSWORD", ""),
 		DBName:       getEnv("DB_NAME", "codex_gateway"),
