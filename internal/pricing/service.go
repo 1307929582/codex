@@ -244,8 +244,8 @@ func (s *PricingService) syncToDatabase() {
 			continue
 		}
 
-		inputPrice := pricing.InputCostPerToken * 1000000  // Convert to per 1K
-		outputPrice := pricing.OutputCostPerToken * 1000000
+		inputPrice := pricing.InputCostPerToken * 1000  // Convert to per 1K
+		outputPrice := pricing.OutputCostPerToken * 1000
 
 		// Check if model exists
 		var existing models.ModelPricing
