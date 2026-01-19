@@ -61,7 +61,16 @@ func SeedCodexPricing() error {
 			}
 			log.Printf("Seeded pricing for model: %s", pricing.ModelName)
 		} else {
-			log.Printf("Pricing for %s already exists, skipping", pricing.ModelName)
+			// Model exists, update it to ensure correct pricing
+			existing.InputPricePer1k = pricing.InputPricePer1k
+			existing.OutputPricePer1k = pricing.OutputPricePer1k
+			existing.MarkupMultiplier = pricing.MarkupMultiplier
+			if err := DB.Save(&existing).Error; err != nil {
+				log.Printf("Failed to update pricing for %s: %v", pricing.ModelName, err)
+				return err
+			}
+			log.Printf("Updated pricing for model: %s (input=$%.6f, output=$%.6f)",
+				pricing.ModelName, pricing.InputPricePer1k, pricing.OutputPricePer1k)
 		}
 	}
 
