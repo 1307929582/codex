@@ -45,6 +45,9 @@ func main() {
 		log.Fatal("Failed to seed Codex upstreams:", err)
 	}
 
+	// Initialize LinuxDo OAuth
+	handlers.InitLinuxDoOAuth()
+
 	// Initialize pricing service
 	pricingService := pricing.GetService()
 	if err := pricingService.Initialize(); err != nil {
@@ -88,6 +91,10 @@ func main() {
 		{
 			auth.POST("/register", handlers.Register)
 			auth.POST("/login", handlers.Login)
+
+			// LinuxDo OAuth
+			auth.GET("/linuxdo", handlers.LinuxDoLogin)
+			auth.GET("/linuxdo/callback", handlers.LinuxDoCallback)
 		}
 
 		// Protected Routes

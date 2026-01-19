@@ -39,6 +39,15 @@ export default function LoginPage() {
     }
   };
 
+  const handleLinuxDoLogin = async () => {
+    try {
+      const res = await apiClient.get('/api/auth/linuxdo');
+      window.location.href = res.data.url;
+    } catch (err: any) {
+      setError('LinuxDo登录失败');
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-[400px]">
@@ -62,6 +71,28 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" isLoading={isSubmitting}>
               登录
             </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">或</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleLinuxDoLogin}
+            >
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+              </svg>
+              使用 LinuxDo 登录
+            </Button>
+
             <p className="text-center text-sm text-muted-foreground">
               还没有账户？{' '}
               <Link href="/register" className="text-primary hover:underline">

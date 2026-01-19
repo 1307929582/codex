@@ -10,10 +10,17 @@ import (
 type User struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Email        string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string         `gorm:"type:varchar(255);not null" json:"-"`
+	PasswordHash string         `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
 	Balance      float64        `gorm:"type:decimal(18,6);default:0" json:"balance"`
 	Status       string         `gorm:"type:varchar(20);default:'active'" json:"status"`
 	Role         string         `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
+
+	// OAuth fields
+	OAuthProvider string `gorm:"type:varchar(50)" json:"oauth_provider"` // "linuxdo", "email", etc.
+	OAuthID       string `gorm:"type:varchar(255);index:idx_oauth" json:"oauth_id"` // Provider's user ID
+	Username      string `gorm:"type:varchar(100)" json:"username"` // Display name from OAuth
+	AvatarURL     string `gorm:"type:varchar(500)" json:"avatar_url"` // Profile picture URL
+
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`

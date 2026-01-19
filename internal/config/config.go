@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -16,6 +17,13 @@ type Config struct {
 	DBName       string
 	DBSSLMode    string
 	JWTSecret    string
+
+	// OAuth configuration
+	LinuxDoClientID     string
+	LinuxDoClientSecret string
+	LinuxDoRedirectURL  string
+	FrontendURL         string
+	DefaultBalance      float64
 }
 
 var AppConfig *Config
@@ -34,6 +42,13 @@ func Load() error {
 		DBName:       getEnv("DB_NAME", "codex_gateway"),
 		DBSSLMode:    getEnv("DB_SSLMODE", "disable"),
 		JWTSecret:    getEnv("JWT_SECRET", ""),
+
+		// OAuth configuration
+		LinuxDoClientID:     getEnv("LINUXDO_CLIENT_ID", ""),
+		LinuxDoClientSecret: getEnv("LINUXDO_CLIENT_SECRET", ""),
+		LinuxDoRedirectURL:  getEnv("LINUXDO_REDIRECT_URL", "https://codex.zenscaleai.com/api/auth/linuxdo/callback"),
+		FrontendURL:         getEnv("FRONTEND_URL", "https://codex.zenscaleai.com"),
+		DefaultBalance:      getEnvFloat("DEFAULT_BALANCE", 0),
 	}
 
 	if AppConfig.JWTSecret == "" {
@@ -50,6 +65,16 @@ func Load() error {
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+func getEnvFloat(key string, defaultValue float64) float64 {
+	if value := os.Getenv(key); value != "" {
+		var result float64
+		if _, err := fmt.Sscanf(value, "%f", &result); err == nil {
+			return result
+		}
 	}
 	return defaultValue
 }
