@@ -46,9 +46,15 @@ type OpenAIResponse struct {
 	Created int64  `json:"created"`
 	Model   string `json:"model"`
 	Usage   struct {
+		// ChatGPT API fields
 		PromptTokens     int `json:"prompt_tokens"`
 		CompletionTokens int `json:"completion_tokens"`
 		TotalTokens      int `json:"total_tokens"`
+
+		// Codex/Responses API fields
+		InputTokens  int `json:"input_tokens"`
+		OutputTokens int `json:"output_tokens"`
+		CachedTokens int `json:"cached_tokens"`
 	} `json:"usage"`
 	Choices []struct {
 		Message struct {
@@ -222,10 +228,16 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 			var chunk OpenAIResponse
 			if err := json.Unmarshal([]byte(data), &chunk); err == nil {
+				// Try ChatGPT API fields first
 				if chunk.Usage.TotalTokens > 0 {
 					lastUsage.PromptTokens = chunk.Usage.PromptTokens
 					lastUsage.CompletionTokens = chunk.Usage.CompletionTokens
 					lastUsage.TotalTokens = chunk.Usage.TotalTokens
+				} else if chunk.Usage.InputTokens > 0 || chunk.Usage.OutputTokens > 0 {
+					// Codex/Responses API uses different field names
+					lastUsage.PromptTokens = chunk.Usage.InputTokens
+					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
+					lastUsage.TotalTokens = chunk.Usage.InputTokens + chunk.Usage.OutputTokens
 				}
 			}
 		}
@@ -278,13 +290,23 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 
 	latencyMs := int(time.Since(startTime).Milliseconds())
 
-	cost, err := calculateCost(model, upstreamResp.Usage.PromptTokens, upstreamResp.Usage.CompletionTokens)
+	// Extract token counts (support both ChatGPT and Codex API formats)
+	inputTokens := upstreamResp.Usage.PromptTokens
+	outputTokens := upstreamResp.Usage.CompletionTokens
+
+	// If ChatGPT fields are empty, try Codex fields
+	if inputTokens == 0 && outputTokens == 0 {
+		inputTokens = upstreamResp.Usage.InputTokens
+		outputTokens = upstreamResp.Usage.OutputTokens
+	}
+
+	cost, err := calculateCost(model, inputTokens, outputTokens)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("pricing error: %v", err)})
 		return
 	}
 
-	if err := recordUsageAndBill(user.ID, apiKey.ID, model, upstreamResp.Usage.PromptTokens, upstreamResp.Usage.CompletionTokens, cost, latencyMs); err != nil {
+	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cost, latencyMs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing failed"})
 		return
 	}
