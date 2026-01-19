@@ -84,8 +84,11 @@ func ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Apply Codex transformations
-	codex.TransformRequest(reqBody)
+	// Only apply Codex transformations for ChatGPT API endpoints
+	// Skip transformation for Codex endpoints like /responses, /completions
+	if strings.HasSuffix(requestPath, "/chat/completions") {
+		codex.TransformRequest(reqBody)
+	}
 
 	// Pre-flight balance check
 	if user.Balance <= 0 {
