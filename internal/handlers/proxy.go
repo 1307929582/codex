@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"codex-gateway/internal/config"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
 
@@ -97,18 +96,33 @@ func ProxyHandler(c *gin.Context) {
 }
 
 func forwardToOpenAI(ctx context.Context, req OpenAIRequest) (*OpenAIResponse, error) {
+	// Get OpenAI config from database
+	var settings models.SystemSettings
+	if err := database.DB.First(&settings).Error; err != nil {
+		return nil, fmt.Errorf("failed to load system settings: %w", err)
+	}
+
+	if settings.OpenAIAPIKey == "" {
+		return nil, fmt.Errorf("OpenAI API key not configured in admin panel")
+	}
+
+	baseURL := settings.OpenAIBaseURL
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
+
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", config.AppConfig.OpenAIBaseURL+"/chat/completions", bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", baseURL+"/chat/completions", bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+config.AppConfig.OpenAIAPIKey)
+	httpReq.Header.Set("Authorization", "Bearer "+settings.OpenAIAPIKey)
 
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {

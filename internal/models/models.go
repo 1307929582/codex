@@ -78,6 +78,8 @@ type SystemSettings struct {
 	DefaultBalance      float64   `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
 	MinRechargeAmount   float64   `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
 	RegistrationEnabled bool      `gorm:"default:true" json:"registration_enabled"`
+	OpenAIAPIKey        string    `gorm:"type:varchar(255)" json:"openai_api_key"`
+	OpenAIBaseURL       string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

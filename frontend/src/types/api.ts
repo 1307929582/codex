@@ -87,6 +87,8 @@ export interface SystemSettings {
   default_balance: number;
   min_recharge_amount: number;
   registration_enabled: boolean;
+  openai_api_key: string;
+  openai_base_url: string;
   created_at: string;
   updated_at: string;
 }

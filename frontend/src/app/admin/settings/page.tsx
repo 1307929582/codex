@@ -18,6 +18,8 @@ export default function AdminSettingsPage() {
     default_balance: 0,
     min_recharge_amount: 10,
     registration_enabled: true,
+    openai_api_key: '',
+    openai_base_url: 'https://api.openai.com/v1',
   });
 
   // Update form when data loads
@@ -28,6 +30,8 @@ export default function AdminSettingsPage() {
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
         registration_enabled: settings.registration_enabled ?? true,
+        openai_api_key: settings.openai_api_key || '',
+        openai_base_url: settings.openai_base_url || 'https://api.openai.com/v1',
       });
     }
   });
@@ -63,6 +67,47 @@ export default function AdminSettingsPage() {
       </div>
 
       <div className="space-y-6">
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-bold text-gray-900">OpenAI配置</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                OpenAI API密钥
+              </label>
+              <input
+                type="password"
+                value={formData.openai_api_key}
+                onChange={(e) =>
+                  setFormData({ ...formData, openai_api_key: e.target.value })
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                placeholder="sk-..."
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                OpenAI API密钥，用于调用OpenAI服务
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                OpenAI Base URL
+              </label>
+              <input
+                type="text"
+                value={formData.openai_base_url}
+                onChange={(e) =>
+                  setFormData({ ...formData, openai_base_url: e.target.value })
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                placeholder="https://api.openai.com/v1"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                OpenAI API的Base URL，支持自定义代理
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-bold text-gray-900">系统公告</h2>
           <textarea
