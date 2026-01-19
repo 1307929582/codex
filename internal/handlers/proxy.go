@@ -54,7 +54,9 @@ type OpenAIResponse struct {
 		// Codex/Responses API fields
 		InputTokens  int `json:"input_tokens"`
 		OutputTokens int `json:"output_tokens"`
-		CachedTokens int `json:"cached_tokens"`
+		InputTokenDetails struct {
+			CachedTokens int `json:"cached_tokens"`
+		} `json:"input_tokens_details"`
 	} `json:"usage"`
 	Choices []struct {
 		Message struct {
@@ -238,7 +240,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					// Codex/Responses API uses different field names
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
 					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
-					lastUsage.CachedTokens = chunk.Usage.CachedTokens
+					lastUsage.CachedTokens = chunk.Usage.InputTokenDetails.CachedTokens
 					lastUsage.TotalTokens = chunk.Usage.InputTokens + chunk.Usage.OutputTokens
 				}
 			}
@@ -301,7 +303,7 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	if inputTokens == 0 && outputTokens == 0 {
 		inputTokens = upstreamResp.Usage.InputTokens
 		outputTokens = upstreamResp.Usage.OutputTokens
-		cachedTokens = upstreamResp.Usage.CachedTokens
+		cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
 	}
 
 	cost, err := calculateCostWithCache(model, inputTokens, outputTokens, cachedTokens)
