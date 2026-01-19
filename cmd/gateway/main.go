@@ -51,6 +51,13 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// Setup Routes (Public - for initial setup only)
+	setupGroup := router.Group("/api/setup")
+	{
+		setupGroup.GET("/status", handlers.SetupStatus)
+		setupGroup.POST("/initialize", handlers.SetupInitialize)
+	}
+
 	// Control Plane API
 	apiGroup := router.Group("/api")
 	{
