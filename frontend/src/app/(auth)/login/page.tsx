@@ -13,8 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().email('邮箱格式不正确'),
+  password: z.string().min(8, '密码至少8个字符'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -35,7 +35,7 @@ export default function LoginPage() {
       setAuth(res.data.token, res.data.user);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(err.response?.data?.error || '登录失败');
     }
   };
 
@@ -44,28 +44,28 @@ export default function LoginPage() {
       <Card className="w-[400px]">
         <CardHeader>
           <CardTitle className="text-center text-2xl">Codex Gateway</CardTitle>
-          <p className="text-center text-sm text-muted-foreground">Sign in to your account</p>
+          <p className="text-center text-sm text-muted-foreground">登录您的账户</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-medium">邮箱</label>
               <Input {...register('email')} placeholder="admin@example.com" type="email" />
               {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
+              <label className="text-sm font-medium">密码</label>
               <Input type="password" {...register('password')} placeholder="••••••••" />
               {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
             </div>
             {error && <div className="text-sm text-red-500 text-center bg-red-50 p-2 rounded">{error}</div>}
             <Button type="submit" className="w-full" isLoading={isSubmitting}>
-              Sign In
+              登录
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
+              还没有账户？{' '}
               <Link href="/register" className="text-primary hover:underline">
-                Register
+                立即注册
               </Link>
             </p>
           </form>

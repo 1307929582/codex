@@ -23,35 +23,35 @@ export default function UsagePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Usage Logs</h2>
-        <p className="text-muted-foreground">View your API usage history</p>
+        <h2 className="text-3xl font-bold tracking-tight">使用记录</h2>
+        <p className="text-muted-foreground">查看您的API使用历史</p>
       </div>
 
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Model</TableHead>
-              <TableHead>Input Tokens</TableHead>
-              <TableHead>Output Tokens</TableHead>
-              <TableHead>Total Tokens</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead>Latency</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>时间</TableHead>
+              <TableHead>模型</TableHead>
+              <TableHead>输入Token</TableHead>
+              <TableHead>输出Token</TableHead>
+              <TableHead>总Token</TableHead>
+              <TableHead>费用</TableHead>
+              <TableHead>延迟</TableHead>
+              <TableHead>状态</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center h-24">
-                  Loading logs...
+                  加载中...
                 </TableCell>
               </TableRow>
             ) : data?.data?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center h-24">
-                  No usage logs found.
+                  未找到使用记录。
                 </TableCell>
               </TableRow>
             ) : (
@@ -81,7 +81,7 @@ export default function UsagePage() {
       {data && data.total_page > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Page {data.page} of {data.total_page} ({data.total} total records)
+            第 {data.page} 页，共 {data.total_page} 页（共 {data.total} 条记录）
           </p>
           <div className="flex gap-2">
             <Button
@@ -91,7 +91,7 @@ export default function UsagePage() {
               disabled={page === 1}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              上一页
             </Button>
             <Button
               variant="outline"
@@ -99,7 +99,7 @@ export default function UsagePage() {
               onClick={() => setPage(p => Math.min(data.total_page, p + 1))}
               disabled={page === data.total_page}
             >
-              Next
+              下一页
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
