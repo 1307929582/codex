@@ -24,12 +24,12 @@ func getLinuxDoOAuthConfig() (*oauth2.Config, error) {
 		return nil, fmt.Errorf("failed to load system settings: %v", err)
 	}
 
-	if !settings.LinuxDoEnabled {
-		return nil, fmt.Errorf("LinuxDo OAuth is not enabled")
-	}
-
 	if settings.LinuxDoClientID == "" || settings.LinuxDoClientSecret == "" {
 		return nil, fmt.Errorf("LinuxDo OAuth credentials not configured")
+	}
+
+	if !settings.LinuxDoEnabled {
+		return nil, fmt.Errorf("LinuxDo OAuth is not enabled")
 	}
 
 	return &oauth2.Config{
