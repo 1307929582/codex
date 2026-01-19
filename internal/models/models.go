@@ -13,6 +13,7 @@ type User struct {
 	PasswordHash string         `gorm:"type:varchar(255);not null" json:"-"`
 	Balance      float64        `gorm:"type:decimal(18,6);default:0" json:"balance"`
 	Status       string         `gorm:"type:varchar(20);default:'active'" json:"status"`
+	Role         string         `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
@@ -69,4 +70,25 @@ type Transaction struct {
 	Type        string    `gorm:"type:varchar(20);not null" json:"type"` // deposit, refund
 	Description string    `gorm:"type:text" json:"description"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+}
+
+type SystemSettings struct {
+	ID                  uint      `gorm:"primaryKey" json:"id"`
+	Announcement        string    `gorm:"type:text" json:"announcement"`
+	DefaultBalance      float64   `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
+	MinRechargeAmount   float64   `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
+	RegistrationEnabled bool      `gorm:"default:true" json:"registration_enabled"`
+	CreatedAt           time.Time `json:"created_at"`
+	UpdatedAt           time.Time `json:"updated_at"`
+}
+
+type AdminLog struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	AdminID   uuid.UUID `gorm:"type:uuid;not null;index:idx_admin_logs" json:"admin_id"`
+	Admin     User      `gorm:"foreignKey:AdminID" json:"-"`
+	Action    string    `gorm:"type:varchar(100);not null" json:"action"`
+	Target    string    `gorm:"type:varchar(100)" json:"target"`
+	Details   string    `gorm:"type:text" json:"details"`
+	IPAddress string    `gorm:"type:varchar(45)" json:"ip_address"`
+	CreatedAt time.Time `gorm:"index:idx_admin_logs" json:"created_at"`
 }

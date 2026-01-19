@@ -79,6 +79,28 @@ func main() {
 			protected.GET("/account/balance", handlers.GetBalance)
 			protected.GET("/account/transactions", handlers.GetTransactions)
 		}
+
+		// Admin Routes
+		admin := apiGroup.Group("/admin")
+		admin.Use(middleware.JWTAuthMiddleware())
+		admin.Use(middleware.AdminAuthMiddleware())
+		{
+			// User Management
+			admin.GET("/users", handlers.AdminListUsers)
+			admin.GET("/users/:id", handlers.AdminGetUser)
+			admin.PUT("/users/:id/balance", handlers.AdminUpdateBalance)
+			admin.PUT("/users/:id/status", handlers.AdminUpdateUserStatus)
+
+			// System Settings
+			admin.GET("/settings", handlers.AdminGetSettings)
+			admin.PUT("/settings", handlers.AdminUpdateSettings)
+
+			// Statistics
+			admin.GET("/stats/overview", handlers.AdminGetOverview)
+
+			// Logs
+			admin.GET("/logs", handlers.AdminGetLogs)
+		}
 	}
 
 	// Data Plane API (OpenAI Proxy)

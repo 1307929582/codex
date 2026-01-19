@@ -44,6 +44,8 @@ func AutoMigrate() error {
 		&models.ModelPricing{},
 		&models.UsageLog{},
 		&models.Transaction{},
+		&models.SystemSettings{},
+		&models.AdminLog{},
 	)
 }
 
