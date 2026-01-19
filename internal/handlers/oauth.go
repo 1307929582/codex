@@ -17,20 +17,31 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// LinuxDo OAuth configuration
-var linuxdoOAuthConfig *oauth2.Config
+// getLinuxDoOAuthConfig returns OAuth config from database settings
+func getLinuxDoOAuthConfig() (*oauth2.Config, error) {
+	var settings models.SystemSettings
+	if err := database.DB.First(&settings).Error; err != nil {
+		return nil, fmt.Errorf("failed to load system settings: %v", err)
+	}
 
-func InitLinuxDoOAuth() {
-	linuxdoOAuthConfig = &oauth2.Config{
-		ClientID:     config.AppConfig.LinuxDoClientID,
-		ClientSecret: config.AppConfig.LinuxDoClientSecret,
-		RedirectURL:  config.AppConfig.LinuxDoRedirectURL,
+	if !settings.LinuxDoEnabled {
+		return nil, fmt.Errorf("LinuxDo OAuth is not enabled")
+	}
+
+	if settings.LinuxDoClientID == "" || settings.LinuxDoClientSecret == "" {
+		return nil, fmt.Errorf("LinuxDo OAuth credentials not configured")
+	}
+
+	return &oauth2.Config{
+		ClientID:     settings.LinuxDoClientID,
+		ClientSecret: settings.LinuxDoClientSecret,
+		RedirectURL:  config.AppConfig.FrontendURL + "/api/auth/linuxdo/callback",
 		Scopes:       []string{"read"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://linux.do/oauth2/authorize",
 			TokenURL: "https://linux.do/oauth2/token",
 		},
-	}
+	}, nil
 }
 
 // LinuxDoUserInfo represents user data from LinuxDo API
@@ -44,16 +55,28 @@ type LinuxDoUserInfo struct {
 
 // LinuxDoLogin initiates OAuth flow
 func LinuxDoLogin(c *gin.Context) {
+	oauthConfig, err := getLinuxDoOAuthConfig()
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		return
+	}
+
 	state := generateRandomState()
 	// Store state in session/cookie for CSRF protection
 	c.SetCookie("oauth_state", state, 600, "/", "", true, true)
 
-	url := linuxdoOAuthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
+	url := oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
 // LinuxDoCallback handles OAuth callback
 func LinuxDoCallback(c *gin.Context) {
+	oauthConfig, err := getLinuxDoOAuthConfig()
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Verify state for CSRF protection
 	state := c.Query("state")
 	cookieState, err := c.Cookie("oauth_state")
@@ -64,7 +87,7 @@ func LinuxDoCallback(c *gin.Context) {
 
 	// Exchange code for token
 	code := c.Query("code")
-	token, err := linuxdoOAuthConfig.Exchange(context.Background(), code)
+	token, err := oauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to exchange token"})
 		return
@@ -133,6 +156,11 @@ func getLinuxDoUserInfo(accessToken string) (*LinuxDoUserInfo, error) {
 func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 	var user models.User
 
+	// Get default balance from settings
+	var settings models.SystemSettings
+	database.DB.First(&settings)
+	defaultBalance := settings.DefaultBalance
+
 	// Try to find existing user by OAuth ID
 	err := database.DB.Where("oauth_provider = ? AND oauth_id = ?", "linuxdo", fmt.Sprintf("%d", userInfo.ID)).First(&user).Error
 	if err == nil {
@@ -173,7 +201,7 @@ func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 		OAuthProvider: "linuxdo",
 		OAuthID:       fmt.Sprintf("%d", userInfo.ID),
 		AvatarURL:     fmt.Sprintf("https://linux.do%s", userInfo.Avatar),
-		Balance:       config.AppConfig.DefaultBalance,
+		Balance:       defaultBalance,
 		Status:        "active",
 		Role:          "user",
 	}

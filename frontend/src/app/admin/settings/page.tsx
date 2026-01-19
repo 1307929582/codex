@@ -20,6 +20,9 @@ export default function AdminSettings() {
     default_balance: 0,
     min_recharge_amount: 10,
     registration_enabled: true,
+    linuxdo_client_id: '',
+    linuxdo_client_secret: '',
+    linuxdo_enabled: false,
   });
 
   useEffect(() => {
@@ -29,6 +32,9 @@ export default function AdminSettings() {
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
         registration_enabled: settings.registration_enabled ?? true,
+        linuxdo_client_id: settings.linuxdo_client_id || '',
+        linuxdo_client_secret: settings.linuxdo_client_secret || '',
+        linuxdo_enabled: settings.linuxdo_enabled ?? false,
       });
     }
   }, [settings]);
@@ -127,6 +133,67 @@ export default function AdminSettings() {
                 }`}
               />
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* LinuxDo OAuth Configuration */}
+      <section className="grid gap-6 md:grid-cols-[200px_1fr] pt-6 border-t border-zinc-100">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900">LinuxDo OAuth</h2>
+          <p className="text-sm text-zinc-500">LinuxDo 社区登录配置</p>
+        </div>
+        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+            <div>
+              <label className="text-sm font-medium text-zinc-700">启用 LinuxDo 登录</label>
+              <p className="text-xs text-zinc-500 mt-1">允许用户使用 LinuxDo 账户登录</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, linuxdo_enabled: !formData.linuxdo_enabled })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.linuxdo_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.linuxdo_enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">Client ID</label>
+              <input
+                type="text"
+                value={formData.linuxdo_client_id}
+                onChange={(e) => setFormData({ ...formData, linuxdo_client_id: e.target.value })}
+                placeholder="kndqpnv5TsY9ouaiaakf09AVZmd7M9pJ"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">Client Secret</label>
+              <input
+                type="password"
+                value={formData.linuxdo_client_secret}
+                onChange={(e) => setFormData({ ...formData, linuxdo_client_secret: e.target.value })}
+                placeholder="••••••••••••••••••••••••••••••••"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-700">
+              <p className="font-medium mb-1">回调地址配置</p>
+              <p className="text-xs">在 LinuxDo 应用设置中，请将回调地址设置为：</p>
+              <code className="block mt-2 rounded bg-blue-100 px-2 py-1 text-xs font-mono text-blue-900">
+                https://codex.zenscaleai.com/api/auth/linuxdo/callback
+              </code>
+            </div>
           </div>
         </div>
       </section>

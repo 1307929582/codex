@@ -89,8 +89,14 @@ type SystemSettings struct {
 	RegistrationEnabled bool      `gorm:"default:true" json:"registration_enabled"`
 	OpenAIAPIKey        string    `gorm:"type:varchar(255)" json:"openai_api_key"`
 	OpenAIBaseURL       string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
-	CreatedAt           time.Time `json:"created_at"`
-	UpdatedAt           time.Time `json:"updated_at"`
+
+	// LinuxDo OAuth Settings
+	LinuxDoClientID     string `gorm:"type:varchar(255)" json:"linuxdo_client_id"`
+	LinuxDoClientSecret string `gorm:"type:varchar(255)" json:"linuxdo_client_secret"`
+	LinuxDoEnabled      bool   `gorm:"default:false" json:"linuxdo_enabled"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type AdminLog struct {
