@@ -23,7 +23,7 @@ echo "Updating role for user: $EMAIL"
 echo ""
 
 # Connect to PostgreSQL and update role
-docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" <<EOF
+docker compose exec -T postgres psql -U "$DB_USER" -d "$DB_NAME" <<EOF
 -- Check current user status
 SELECT id, email, role, status FROM users WHERE email = '$EMAIL';
 
