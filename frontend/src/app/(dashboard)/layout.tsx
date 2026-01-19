@@ -5,18 +5,24 @@ import { cn } from '@/lib/utils';
 import { LayoutDashboard, Key, Activity, User, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/lib/stores/auth';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout, isAuthenticated, user } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    // Wait for auth store to hydrate from localStorage
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated()) {
       router.push('/login');
     }
-  }, [isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, router]);
 
   const navItems = [
     { href: '/dashboard', label: '控制台', icon: LayoutDashboard },
@@ -29,6 +35,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     logout();
     router.push('/login');
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated()) {
     return null;
