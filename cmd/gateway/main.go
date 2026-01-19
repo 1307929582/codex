@@ -13,6 +13,7 @@ import (
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/handlers"
 	"codex-gateway/internal/middleware"
+	"codex-gateway/internal/pricing"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,13 @@ func main() {
 	if err := database.SeedCodexPricing(); err != nil {
 		log.Fatal("Failed to seed Codex pricing:", err)
 	}
+
+	// Initialize pricing service
+	pricingService := pricing.GetService()
+	if err := pricingService.Initialize(); err != nil {
+		log.Printf("Warning: Pricing service failed to initialize: %v", err)
+	}
+	defer pricingService.Stop()
 
 	router := gin.Default()
 
@@ -111,6 +119,9 @@ func main() {
 
 			// Logs
 			admin.GET("/logs", handlers.AdminGetLogs)
+
+			// Pricing Service Status
+			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
 		}
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
+	"codex-gateway/internal/pricing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -343,4 +344,12 @@ func AdminGetLogs(c *gin.Context) {
 			"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
 		},
 	})
+}
+
+
+// AdminGetPricingStatus gets pricing service status
+func AdminGetPricingStatus(c *gin.Context) {
+	pricingService := pricing.GetService()
+	status := pricingService.GetStatus()
+	c.JSON(http.StatusOK, status)
 }
