@@ -12,38 +12,38 @@ func SeedCodexPricing() error {
 	codexModels := []models.ModelPricing{
 		{
 			ModelName:        "gpt-5.1-codex",
-			InputPricePer1k:  0.00138 * 1000, // $0.00138 per 1K tokens
-			OutputPricePer1k: 0.011 * 1000,   // $0.011 per 1K tokens
+			InputPricePer1k:  0.00138,  // $0.00138 per 1K tokens
+			OutputPricePer1k: 0.011,    // $0.011 per 1K tokens
 			MarkupMultiplier: 1.5,
 		},
 		{
 			ModelName:        "gpt-5.1-codex-mini",
-			InputPricePer1k:  0.000275 * 1000, // $0.000275 per 1K tokens
-			OutputPricePer1k: 0.0022 * 1000,   // $0.0022 per 1K tokens
+			InputPricePer1k:  0.000275, // $0.000275 per 1K tokens
+			OutputPricePer1k: 0.0022,   // $0.0022 per 1K tokens
 			MarkupMultiplier: 1.5,
 		},
 		{
 			ModelName:        "gpt-5.1-codex-max",
-			InputPricePer1k:  0.00138 * 1000, // Same as standard codex
-			OutputPricePer1k: 0.011 * 1000,
+			InputPricePer1k:  0.00138,  // Same as standard codex
+			OutputPricePer1k: 0.011,
 			MarkupMultiplier: 1.5,
 		},
 		{
 			ModelName:        "gpt-5.2-codex",
-			InputPricePer1k:  0.00138 * 1000,
-			OutputPricePer1k: 0.011 * 1000,
+			InputPricePer1k:  0.00138,
+			OutputPricePer1k: 0.011,
 			MarkupMultiplier: 1.5,
 		},
 		{
 			ModelName:        "gpt-5.1",
-			InputPricePer1k:  0.00138 * 1000,
-			OutputPricePer1k: 0.011 * 1000,
+			InputPricePer1k:  0.00138,
+			OutputPricePer1k: 0.011,
 			MarkupMultiplier: 1.5,
 		},
 		{
 			ModelName:        "gpt-5.2",
-			InputPricePer1k:  0.00138 * 1000,
-			OutputPricePer1k: 0.011 * 1000,
+			InputPricePer1k:  0.00138,
+			OutputPricePer1k: 0.011,
 			MarkupMultiplier: 1.5,
 		},
 	}
