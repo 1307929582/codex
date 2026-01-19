@@ -90,6 +90,9 @@ export interface SystemSettings {
   registration_enabled: boolean;
   openai_api_key: string;
   openai_base_url: string;
+  linuxdo_client_id: string;
+  linuxdo_client_secret: string;
+  linuxdo_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
