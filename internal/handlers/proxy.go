@@ -84,8 +84,8 @@ func ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Only apply Codex transformations for ChatGPT API endpoints
-	// Skip transformation for Codex endpoints like /responses, /completions
+	// Only apply ChatGPT transformations for /chat/completions endpoint
+	// For Codex endpoints (/responses, /completions), pass through as-is
 	if strings.HasSuffix(requestPath, "/chat/completions") {
 		codex.TransformRequest(reqBody)
 	}
@@ -125,9 +125,13 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	baseURL := upstreamObj.BaseURL
 	apiKeyStr := upstreamObj.APIKey
 
-	// Ensure stream=true for upstream and request usage info
+	// Ensure stream=true for upstream
 	reqBody["stream"] = true
-	reqBody["stream_options"] = map[string]interface{}{"include_usage": true}
+
+	// Only add stream_options for ChatGPT API (not for Codex/Responses API)
+	if strings.HasSuffix(requestPath, "/chat/completions") {
+		reqBody["stream_options"] = map[string]interface{}{"include_usage": true}
+	}
 
 	// Marshal request
 	reqBytes, err := json.Marshal(reqBody)
