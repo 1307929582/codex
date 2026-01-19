@@ -35,19 +35,19 @@
 
 ### 端口要求
 
-- [ ] **3000端口**: 前端服务（可修改）
-- [ ] **8080端口**: 后端API（可修改）
-- [ ] **5432端口**: PostgreSQL（内部使用）
+- [ ] **12321端口**: 前端服务（可修改）
+- [ ] **12322端口**: 后端API（可修改）
+- [ ] **5433端口**: PostgreSQL（外部访问，可修改）
 
 检查端口是否被占用：
 ```bash
 # Linux/Mac
-lsof -i :3000
-lsof -i :8080
+lsof -i :12321
+lsof -i :12322
 
 # Windows
-netstat -ano | findstr :3000
-netstat -ano | findstr :8080
+netstat -ano | findstr :12321
+netstat -ano | findstr :12322
 ```
 
 ---
@@ -157,9 +157,9 @@ netstat -ano | findstr :8080
 
 - [ ] 检查端口占用
   ```bash
-  lsof -i :3000
-  lsof -i :8080
-  lsof -i :5432
+  lsof -i :12321
+  lsof -i :12322
+  lsof -i :5433
   ```
 
 - [ ] 重新构建镜像

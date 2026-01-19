@@ -143,9 +143,9 @@ main() {
                 init_database
                 echo ""
                 log_info "Deployment complete!"
-                log_info "Backend: http://localhost:8080"
-                log_info "Frontend: http://localhost:3000"
-                log_info "API Docs: http://localhost:8080/health"
+                log_info "Backend: http://localhost:12322"
+                log_info "Frontend: http://localhost:12321"
+                log_info "API Docs: http://localhost:12322/health"
                 ;;
             2)
                 start_services

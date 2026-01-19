@@ -99,7 +99,7 @@ done
 
 echo -n "等待后端启动"
 for i in {1..30}; do
-    if curl -s http://localhost:8080/health &>/dev/null; then
+    if curl -s http://localhost:12322/health &>/dev/null; then
         echo -e " ${GREEN}✓${NC}"
         break
     fi

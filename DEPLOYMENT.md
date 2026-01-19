@@ -49,7 +49,7 @@ cp .env.production.example .env
 DB_PASSWORD=your-secure-password
 OPENAI_API_KEY=sk-your-openai-key
 JWT_SECRET=your-jwt-secret-min-32-chars
-NEXT_PUBLIC_API_URL=http://your-domain.com:8080
+NEXT_PUBLIC_API_URL=http://your-domain.com:12322
 ```
 
 ### 2. 构建并启动
