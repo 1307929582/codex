@@ -182,6 +182,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	var lastUsage struct {
 		PromptTokens     int
 		CompletionTokens int
+		CachedTokens     int
 		TotalTokens      int
 	}
 
@@ -237,6 +238,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					// Codex/Responses API uses different field names
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
 					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
+					lastUsage.CachedTokens = chunk.Usage.CachedTokens
 					lastUsage.TotalTokens = chunk.Usage.InputTokens + chunk.Usage.OutputTokens
 				}
 			}
@@ -253,9 +255,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Bill user after stream completes
 	if lastUsage.TotalTokens > 0 {
-		cost, err := calculateCost(model, lastUsage.PromptTokens, lastUsage.CompletionTokens)
+		cost, err := calculateCostWithCache(model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 		if err == nil {
-			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, cost, latencyMs)
+			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, cost, latencyMs)
 		}
 	} else if streamedChunks > 0 {
 		// Fallback: estimate tokens if usage info not available
@@ -264,9 +266,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		estimatedInput := estimatedTokens / 10  // Assume 10% input
 		estimatedOutput := estimatedTokens - estimatedInput
 
-		cost, err := calculateCost(model, estimatedInput, estimatedOutput)
+		cost, err := calculateCostWithCache(model, estimatedInput, estimatedOutput, 0)
 		if err == nil {
-			_ = recordUsageAndBill(user.ID, apiKey.ID, model, estimatedInput, estimatedOutput, cost, latencyMs)
+			_ = recordUsageAndBill(user.ID, apiKey.ID, model, estimatedInput, estimatedOutput, 0, cost, latencyMs)
 		}
 	}
 }
@@ -293,20 +295,22 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	// Extract token counts (support both ChatGPT and Codex API formats)
 	inputTokens := upstreamResp.Usage.PromptTokens
 	outputTokens := upstreamResp.Usage.CompletionTokens
+	cachedTokens := 0
 
 	// If ChatGPT fields are empty, try Codex fields
 	if inputTokens == 0 && outputTokens == 0 {
 		inputTokens = upstreamResp.Usage.InputTokens
 		outputTokens = upstreamResp.Usage.OutputTokens
+		cachedTokens = upstreamResp.Usage.CachedTokens
 	}
 
-	cost, err := calculateCost(model, inputTokens, outputTokens)
+	cost, err := calculateCostWithCache(model, inputTokens, outputTokens, cachedTokens)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("pricing error: %v", err)})
 		return
 	}
 
-	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cost, latencyMs); err != nil {
+	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cachedTokens, cost, latencyMs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing failed"})
 		return
 	}
@@ -350,17 +354,30 @@ func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, base
 }
 
 func calculateCost(model string, inputTokens, outputTokens int) (float64, error) {
+	return calculateCostWithCache(model, inputTokens, outputTokens, 0)
+}
+
+func calculateCostWithCache(model string, inputTokens, outputTokens, cachedTokens int) (float64, error) {
 	var pricing models.ModelPricing
 	if err := database.DB.Where("model_name = ?", model).First(&pricing).Error; err != nil {
 		return 0, fmt.Errorf("pricing not found for model: %s", model)
 	}
 
-	inputCost := (float64(inputTokens) / 1000.0) * pricing.InputPricePer1k
+	// Calculate costs for each token type
+	// Cached tokens are billed at a discounted rate (usually 50% of input price)
+	regularInputTokens := inputTokens - cachedTokens
+	if regularInputTokens < 0 {
+		regularInputTokens = 0
+	}
+
+	inputCost := (float64(regularInputTokens) / 1000.0) * pricing.InputPricePer1k
+	cachedCost := (float64(cachedTokens) / 1000.0) * pricing.CachedInputPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
-	return (inputCost + outputCost) * pricing.MarkupMultiplier, nil
+
+	return (inputCost + cachedCost + outputCost) * pricing.MarkupMultiplier, nil
 }
 
-func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens int, cost float64, latencyMs int) error {
+func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens, cachedTokens int, cost float64, latencyMs int) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		result := tx.Exec("UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?", cost, userID, cost)
 		if result.Error != nil {
@@ -376,6 +393,7 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			Model:        model,
 			InputTokens:  inputTokens,
 			OutputTokens: outputTokens,
+			CachedTokens: cachedTokens,
 			TotalTokens:  inputTokens + outputTokens,
 			Cost:         cost,
 			LatencyMs:    latencyMs,
