@@ -3,6 +3,7 @@ export interface User {
   email: string;
   balance: number;
   status: string;
+  role: string; // user, admin, super_admin
   created_at: string;
 }
 
@@ -71,4 +72,51 @@ export interface CreateKeyResponse {
   id: number;
   key: string;
   name: string;
+}
+
+// Admin types
+export interface AdminUser extends User {
+  api_key_count?: number;
+  total_cost?: number;
+  total_tokens?: number;
+}
+
+export interface SystemSettings {
+  id: number;
+  announcement: string;
+  default_balance: number;
+  min_recharge_amount: number;
+  registration_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminLog {
+  id: number;
+  admin_id: string;
+  action: string;
+  target: string;
+  details: string;
+  ip_address: string;
+  created_at: string;
+}
+
+export interface AdminStats {
+  total_users: number;
+  active_users: number;
+  total_revenue: number;
+  total_cost: number;
+  total_api_keys: number;
+  today_requests: number;
+  today_revenue: number;
+}
+
+export interface PaginationResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 }
