@@ -40,12 +40,17 @@ export default function CodexUpstreamsPage() {
 
   const triggerHealthCheckMutation = useMutation({
     mutationFn: () => adminApi.triggerHealthCheck(),
-    onSuccess: () => {
-      setHealthCheckMessage('健康检查已触发，正在检测所有上游...');
+    onSuccess: (data: any) => {
+      const { checked_upstreams, total_upstreams } = data;
+      if (checked_upstreams === 0) {
+        setHealthCheckMessage(`没有可检查的上游（共 ${total_upstreams} 个上游，全部为禁用状态）`);
+      } else {
+        setHealthCheckMessage(`健康检查已触发，正在检测 ${checked_upstreams}/${total_upstreams} 个上游...`);
+      }
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'upstream-health'] });
         setHealthCheckMessage(null);
-      }, 2000);
+      }, 3000);
     },
     onError: (error: any) => {
       setHealthCheckMessage(`健康检查失败: ${error.message || '未知错误'}`);

@@ -10,11 +10,23 @@ import (
 
 // AdminTriggerHealthCheck manually triggers health check for all upstreams
 func AdminTriggerHealthCheck(c *gin.Context) {
+	// Get all upstreams to check how many will be checked
+	upstreams := upstream.GetSelector().GetAllUpstreams()
+
+	activeCount := 0
+	for _, u := range upstreams {
+		if u.Status == "active" || u.Status == "unhealthy" {
+			activeCount++
+		}
+	}
+
 	// This will be done asynchronously
 	go upstream.GetHealthChecker().CheckAllUpstreams()
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Health check triggered for all upstreams",
+		"message":        "Health check triggered for all upstreams",
+		"total_upstreams": len(upstreams),
+		"checked_upstreams": activeCount,
 	})
 }
 
