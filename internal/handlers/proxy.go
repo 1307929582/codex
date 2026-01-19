@@ -125,6 +125,10 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		baseURL = "https://api.openai.com/v1"
 	}
 
+	// Ensure stream=true for upstream and request usage info
+	reqBody["stream"] = true
+	reqBody["stream_options"] = map[string]interface{}{"include_usage": true}
+
 	// Marshal request
 	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
@@ -176,13 +180,33 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		return
 	}
 
+	// Track streaming state
+	streamedChunks := 0
+	clientDisconnected := false
+
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
+		// Check if client disconnected
+		select {
+		case <-c.Request.Context().Done():
+			clientDisconnected = true
+			break
+		default:
+		}
+
+		if clientDisconnected {
+			break
+		}
+
 		line := scanner.Text()
 
 		// Forward SSE line
-		fmt.Fprintf(c.Writer, "%s\n", line)
+		if _, err := fmt.Fprintf(c.Writer, "%s\n", line); err != nil {
+			clientDisconnected = true
+			break
+		}
 		flusher.Flush()
+		streamedChunks++
 
 		// Parse for usage information
 		if strings.HasPrefix(line, "data: ") {
@@ -204,7 +228,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	if err := scanner.Err(); err != nil {
 		// Stream already started, can't send JSON error
-		return
+		// But we should still try to bill for what was sent
 	}
 
 	// Calculate latency
@@ -215,6 +239,17 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		cost, err := calculateCost(model, lastUsage.PromptTokens, lastUsage.CompletionTokens)
 		if err == nil {
 			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, cost, latencyMs)
+		}
+	} else if streamedChunks > 0 {
+		// Fallback: estimate tokens if usage info not available
+		// Rough estimate: ~4 chars per token, ~100 chars per chunk
+		estimatedTokens := streamedChunks * 25
+		estimatedInput := estimatedTokens / 10  // Assume 10% input
+		estimatedOutput := estimatedTokens - estimatedInput
+
+		cost, err := calculateCost(model, estimatedInput, estimatedOutput)
+		if err == nil {
+			_ = recordUsageAndBill(user.ID, apiKey.ID, model, estimatedInput, estimatedOutput, cost, latencyMs)
 		}
 	}
 }

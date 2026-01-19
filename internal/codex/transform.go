@@ -44,12 +44,6 @@ func TransformRequest(reqBody map[string]interface{}) bool {
 		}
 	}
 
-	// Force stream=true for Codex
-	if stream, ok := reqBody["stream"].(bool); !ok || !stream {
-		reqBody["stream"] = true
-		modified = true
-	}
-
 	// Force store=false for OAuth compatibility
 	if store, ok := reqBody["store"].(bool); !ok || store {
 		reqBody["store"] = false
