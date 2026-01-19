@@ -9,6 +9,7 @@ export default function CodexUpstreamsPage() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUpstream, setEditingUpstream] = useState<any>(null);
+  const [healthCheckMessage, setHealthCheckMessage] = useState<string | null>(null);
 
   const { data: upstreamsData, isLoading } = useQuery({
     queryKey: ['admin', 'codex-upstreams'],
@@ -40,9 +41,15 @@ export default function CodexUpstreamsPage() {
   const triggerHealthCheckMutation = useMutation({
     mutationFn: () => adminApi.triggerHealthCheck(),
     onSuccess: () => {
+      setHealthCheckMessage('健康检查已触发，正在检测所有上游...');
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'upstream-health'] });
+        setHealthCheckMessage(null);
       }, 2000);
+    },
+    onError: (error: any) => {
+      setHealthCheckMessage(`健康检查失败: ${error.message || '未知错误'}`);
+      setTimeout(() => setHealthCheckMessage(null), 3000);
     },
   });
 
@@ -106,6 +113,16 @@ export default function CodexUpstreamsPage() {
           </button>
         </div>
       </div>
+
+      {/* Health Check Message */}
+      {healthCheckMessage && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 animate-spin text-blue-600" />
+            <p className="text-sm font-medium text-blue-900">{healthCheckMessage}</p>
+          </div>
+        </div>
+      )}
 
       {/* Upstreams List */}
       <div className="grid gap-4">
