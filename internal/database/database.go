@@ -3,8 +3,8 @@ package database
 import (
 	"fmt"
 	"log"
-	"os"
 
+	"codex-gateway/internal/config"
 	"codex-gateway/internal/models"
 
 	"gorm.io/driver/postgres"
@@ -15,14 +15,19 @@ import (
 var DB *gorm.DB
 
 func Connect() error {
+	cfg := config.AppConfig
+	if cfg.DBPassword == "" {
+		return fmt.Errorf("DB_PASSWORD is required but not set")
+	}
+
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_SSLMODE"),
+		cfg.DBHost,
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBName,
+		cfg.DBPort,
+		cfg.DBSSLMode,
 	)
 
 	var err error
