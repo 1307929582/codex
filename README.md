@@ -121,9 +121,25 @@ open http://localhost:3000
 
 ## 📚 详细文档
 
+### 快速导航
+- 📖 [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) - **完整文档索引**（推荐从这里开始）
+- 🚀 [QUICK_START.md](./QUICK_START.md) - 3个命令快速部署
+- 📋 [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) - 常用命令快速参考
+
+### 核心文档
 - [README_DEPLOY.md](./README_DEPLOY.md) - 完整部署指南
 - [ADMIN_GUIDE.md](./ADMIN_GUIDE.md) - 管理员面板使用指南
+- [FEATURES_DEMO.md](./FEATURES_DEMO.md) - 功能演示（带界面）
 - [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) - API文档
+
+### 运维文档
+- [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) - 部署检查清单
+- [DEPLOYMENT_FINAL.md](./DEPLOYMENT_FINAL.md) - 最终部署文档
+
+### 项目文档
+- [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) - 项目技术总结
+- [PROJECT_COMPLETION_REPORT.md](./PROJECT_COMPLETION_REPORT.md) - 项目完成报告
+- [RELEASE_NOTES_v2.0.md](./RELEASE_NOTES_v2.0.md) - v2.0发布说明
 - [SECURITY_FIXES.md](./SECURITY_FIXES.md) - 安全更新日志
 
 ---
