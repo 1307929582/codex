@@ -20,17 +20,23 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+# Check for docker-compose (V1) or docker compose (V2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
     echo -e "${RED}错误: 未安装Docker Compose${NC}"
     exit 1
 fi
 
 echo -e "${GREEN}✓${NC} Docker已安装"
+echo -e "${GREEN}✓${NC} Docker Compose已安装 ($DOCKER_COMPOSE)"
 
 # Stop existing services
 echo ""
 echo -e "${GREEN}[2/7]${NC} 停止现有服务..."
-docker-compose down 2>/dev/null || true
+$DOCKER_COMPOSE down 2>/dev/null || true
 
 # Generate .env if not exists
 echo ""
@@ -71,12 +77,12 @@ fi
 # Build images
 echo ""
 echo -e "${GREEN}[4/7]${NC} 构建Docker镜像..."
-docker-compose build
+$DOCKER_COMPOSE build
 
 # Start services
 echo ""
 echo -e "${GREEN}[5/7]${NC} 启动服务..."
-docker-compose up -d
+$DOCKER_COMPOSE up -d
 
 # Wait for services
 echo ""
@@ -167,8 +173,8 @@ echo "  2. 使用管理员账户登录"
 echo "  3. 在 系统设置 中配置 OpenAI API 密钥"
 echo ""
 echo "查看日志："
-echo "  docker-compose logs -f"
+echo "  $DOCKER_COMPOSE logs -f"
 echo ""
 echo "停止服务："
-echo "  docker-compose down"
+echo "  $DOCKER_COMPOSE down"
 echo ""
