@@ -6,7 +6,7 @@ echo ""
 
 # 1. 添加数据库字段
 echo "1. 添加数据库字段..."
-docker exec codex-postgres psql -U codex_user -d codex_gateway << 'SQL'
+docker exec codex-postgres psql -U postgres -d codex_gateway << 'SQL'
 ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS linuxdo_client_id VARCHAR(255);
 ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS linuxdo_client_secret VARCHAR(255);
 ALTER TABLE system_settings ADD COLUMN IF NOT EXISTS linuxdo_enabled BOOLEAN DEFAULT false;
@@ -24,7 +24,7 @@ echo ""
 
 # 2. 配置LinuxDo OAuth
 echo "2. 配置LinuxDo OAuth..."
-docker exec codex-postgres psql -U codex_user -d codex_gateway << 'SQL'
+docker exec codex-postgres psql -U postgres -d codex_gateway << 'SQL'
 INSERT INTO system_settings (id, announcement, default_balance, min_recharge_amount, registration_enabled, linuxdo_client_id, linuxdo_client_secret, linuxdo_enabled)
 VALUES (1, '', 0, 10, true, 'kndqpnv5TsY9ouaiaakf09AVZmd7M9pJ', 'XQAnYlCmDdXHgm5zRjjIzZMvfKtrATXg', true)
 ON CONFLICT (id) DO UPDATE SET
@@ -45,7 +45,7 @@ echo ""
 
 # 4. 验证配置
 echo "4. 验证配置..."
-docker exec codex-postgres psql -U codex_user -d codex_gateway -c "SELECT id, linuxdo_client_id, linuxdo_enabled FROM system_settings;"
+docker exec codex-postgres psql -U postgres -d codex_gateway -c "SELECT id, linuxdo_client_id, linuxdo_enabled FROM system_settings;"
 echo ""
 
 # 5. 测试OAuth端点
