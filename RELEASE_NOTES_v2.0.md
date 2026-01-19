@@ -20,7 +20,7 @@
 
 #### 使用流程
 ```
-访问 http://localhost:3000
+访问 http://localhost:12321
     ↓
 自动跳转到 /setup
     ↓
@@ -357,4 +357,4 @@ cd codex
 ./deploy-auto.sh
 ```
 
-访问 `http://localhost:3000` 开始使用！
+访问 `http://localhost:12321` 开始使用！

@@ -105,7 +105,7 @@ if len(AppConfig.JWTSecret) < 32 {
 **修复方案**:
 ```go
 router.Use(cors.New(cors.Config{
-    AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
+    AllowOrigins:     []string{"http://localhost:12321", "http://localhost:3001"},
     AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
     ExposeHeaders:    []string{"Content-Length"},
@@ -252,13 +252,13 @@ DB_PASSWORD=your-secure-db-password
    ```bash
    # 测试无效的user_id格式
    curl -H "Authorization: Bearer <token-with-invalid-uuid>" \
-        http://localhost:8080/api/auth/me
+        http://localhost:12322/api/auth/me
    ```
 
 2. **余额测试**:
    ```bash
    # 测试零余额用户调用API
-   curl -X POST http://localhost:8080/v1/chat/completions \
+   curl -X POST http://localhost:12322/v1/chat/completions \
         -H "Authorization: Bearer <api-key>" \
         -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"test"}]}'
    ```

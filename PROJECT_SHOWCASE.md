@@ -28,7 +28,7 @@ cd codex
 ./deploy-auto.sh
 ```
 
-访问 `http://localhost:3000`，完成3步配置，立即开始使用！
+访问 `http://localhost:12321`，完成3步配置，立即开始使用！
 
 ---
 
@@ -72,14 +72,14 @@ $ ./deploy-auto.sh
 ================================
 
 访问地址：
-  前端:        http://localhost:3000
-  管理员面板:  http://localhost:3000/admin
-  后端API:     http://localhost:8080
+  前端:        http://localhost:12321
+  管理员面板:  http://localhost:12321/admin
+  后端API:     http://localhost:12322
 ```
 
 ### 2. 首次安装向导
 
-访问 `http://localhost:3000` 后自动进入配置向导：
+访问 `http://localhost:12321` 后自动进入配置向导：
 
 **Step 1: 创建管理员账户**
 - 输入邮箱和密码
@@ -128,7 +128,7 @@ $ ./deploy-auto.sh
 
 ```bash
 # 使用API密钥调用OpenAI
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -376,7 +376,7 @@ cd codex
 ./deploy-auto.sh
 
 # 3. 打开浏览器
-open http://localhost:3000
+open http://localhost:12321
 ```
 
 就这么简单！

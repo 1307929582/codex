@@ -92,19 +92,19 @@ netstat -ano | findstr :8080
 
 - [ ] 检查后端健康
   ```bash
-  curl http://localhost:8080/health
+  curl http://localhost:12322/health
   # 应返回: {"status":"ok"}
   ```
 
 - [ ] 检查前端访问
   ```bash
-  curl -I http://localhost:3000
+  curl -I http://localhost:12321
   # 应返回: HTTP/1.1 200 OK
   ```
 
 ### 第四步：完成安装向导
 
-- [ ] 打开浏览器访问 `http://localhost:3000`
+- [ ] 打开浏览器访问 `http://localhost:12321`
 - [ ] 自动跳转到 `/setup` 页面
 - [ ] 完成3步配置：
   - [ ] Step 1: 创建管理员账户
@@ -115,7 +115,7 @@ netstat -ano | findstr :8080
 
 ### 第五步：验证功能
 
-- [ ] 访问管理员面板 `http://localhost:3000/admin`
+- [ ] 访问管理员面板 `http://localhost:12321/admin`
 - [ ] 查看Dashboard统计数据
 - [ ] 访问系统设置，确认OpenAI配置已保存
 - [ ] 退出登录，重新登录测试
@@ -217,7 +217,7 @@ netstat -ano | findstr :8080
 
 - [ ] 测试API健康检查
   ```bash
-  curl http://localhost:8080/health
+  curl http://localhost:12322/health
   ```
 
 ### 问题6：无法访问安装向导
@@ -229,7 +229,7 @@ netstat -ano | findstr :8080
   docker-compose logs frontend
   ```
 
-- [ ] 手动访问 `http://localhost:3000/setup`
+- [ ] 手动访问 `http://localhost:12321/setup`
 
 ---
 
@@ -265,7 +265,7 @@ netstat -ano | findstr :8080
 ### 功能验证
 
 - [ ] **用户注册**
-  - 访问 `http://localhost:3000/register`
+  - 访问 `http://localhost:12321/register`
   - 注册新用户
   - 确认能够登录
 
@@ -276,7 +276,7 @@ netstat -ano | findstr :8080
 
 - [ ] **OpenAI代理**
   ```bash
-  curl -X POST http://localhost:8080/v1/chat/completions \
+  curl -X POST http://localhost:12322/v1/chat/completions \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}]}'
@@ -298,7 +298,7 @@ netstat -ano | findstr :8080
 - [ ] 测试并发请求
   ```bash
   # 使用ab或wrk进行压力测试
-  ab -n 100 -c 10 http://localhost:8080/health
+  ab -n 100 -c 10 http://localhost:12322/health
   ```
 
 - [ ] 检查响应时间
@@ -320,8 +320,8 @@ netstat -ano | findstr :8080
 
 ### 配置信息
 
-- **前端URL**: http://localhost:3000
-- **后端URL**: http://localhost:8080
+- **前端URL**: http://localhost:12321
+- **后端URL**: http://localhost:12322
 - **数据库**: PostgreSQL 15
 - **管理员邮箱**: _______________
 

@@ -374,7 +374,7 @@ cd codex
 ./deploy-auto.sh
 
 # 3. 访问系统
-open http://localhost:3000
+open http://localhost:12321
 ```
 
 ### 文档导航

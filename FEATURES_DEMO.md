@@ -53,9 +53,9 @@ cd codex
 ================================
 
 访问地址：
-  前端:        http://localhost:3000
-  管理员面板:  http://localhost:3000/admin
-  后端API:     http://localhost:8080
+  前端:        http://localhost:12321
+  管理员面板:  http://localhost:12321/admin
+  后端API:     http://localhost:12322
 ```
 
 ---
@@ -64,7 +64,7 @@ cd codex
 
 ### 自动跳转
 
-打开浏览器访问 `http://localhost:3000`，系统自动检测到没有管理员，跳转到 `/setup`。
+打开浏览器访问 `http://localhost:12321`，系统自动检测到没有管理员，跳转到 `/setup`。
 
 ### Step 1: 创建管理员账户
 
@@ -176,7 +176,7 @@ cd codex
 
 ### Dashboard（系统概览）
 
-访问 `http://localhost:3000/admin`
+访问 `http://localhost:12321/admin`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -199,7 +199,7 @@ cd codex
 
 ### 用户管理
 
-访问 `http://localhost:3000/admin/users`
+访问 `http://localhost:12321/admin/users`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -227,7 +227,7 @@ cd codex
 
 ### 用户详情页
 
-访问 `http://localhost:3000/admin/users/[id]`
+访问 `http://localhost:12321/admin/users/[id]`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -278,7 +278,7 @@ cd codex
 
 ### 系统设置
 
-访问 `http://localhost:3000/admin/settings`
+访问 `http://localhost:12321/admin/settings`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -324,7 +324,7 @@ OpenAI配置
 
 ### 操作日志
 
-访问 `http://localhost:3000/admin/logs`
+访问 `http://localhost:12321/admin/logs`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -353,7 +353,7 @@ OpenAI配置
 
 ### 用户注册
 
-访问 `http://localhost:3000/register`
+访问 `http://localhost:12321/register`
 
 ```
 ┌─────────────────────────────────────┐
@@ -377,7 +377,7 @@ OpenAI配置
 
 ### 用户Dashboard
 
-访问 `http://localhost:3000/dashboard`
+访问 `http://localhost:12321/dashboard`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -405,7 +405,7 @@ OpenAI配置
 
 ### API密钥管理
 
-访问 `http://localhost:3000/api-keys`
+访问 `http://localhost:12321/api-keys`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -457,7 +457,7 @@ OpenAI配置
 
 ### 使用记录
 
-访问 `http://localhost:3000/usage`
+访问 `http://localhost:12321/usage`
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -487,7 +487,7 @@ OpenAI配置
 
 ```bash
 # 使用创建的API密钥调用OpenAI API
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer sk-abc123def456ghi789..." \
   -H "Content-Type: application/json" \
   -d '{

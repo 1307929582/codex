@@ -35,7 +35,7 @@ cp .env.local .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:12321](http://localhost:12321)
 
 ## Project Structure
 
@@ -73,4 +73,4 @@ npm start
 
 ## Environment Variables
 
-- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:8080)
+- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:12322)

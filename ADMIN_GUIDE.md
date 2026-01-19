@@ -30,7 +30,7 @@ INITIAL_ADMIN_PASSWORD=your-secure-password
 ### 2. 登录并访问
 
 1. 使用管理员账户登录系统
-2. 访问 `http://localhost:3000/admin`
+2. 访问 `http://localhost:12321/admin`
 3. 系统会自动验证您的管理员权限
 
 ---

@@ -124,7 +124,7 @@ if [ "$ADMIN_COUNT" = "0" ]; then
 
         # Register user
         echo -n "注册账户..."
-        REGISTER_RESPONSE=$(curl -s -X POST http://localhost:8080/api/auth/register \
+        REGISTER_RESPONSE=$(curl -s -X POST http://localhost:12322/api/auth/register \
             -H "Content-Type: application/json" \
             -d "{\"email\":\"$admin_email\",\"password\":\"$admin_password\"}")
 
@@ -157,12 +157,12 @@ echo -e "${GREEN}部署完成！${NC}"
 echo "================================"
 echo ""
 echo "访问地址："
-echo "  前端:        http://localhost:3000"
-echo "  管理员面板:  http://localhost:3000/admin"
-echo "  后端API:     http://localhost:8080"
+echo "  前端:        http://localhost:12321"
+echo "  管理员面板:  http://localhost:12321/admin"
+echo "  后端API:     http://localhost:12322"
 echo ""
 echo "下一步："
-echo "  1. 访问 http://localhost:3000/admin"
+echo "  1. 访问 http://localhost:12321/admin"
 echo "  2. 使用管理员账户登录"
 echo "  3. 在 系统设置 中配置 OpenAI API 密钥"
 echo ""

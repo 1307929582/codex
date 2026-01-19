@@ -31,9 +31,9 @@ cd codex
 
 ### 3. 访问服务
 
-- **前端**: http://localhost:3000
-- **后端API**: http://localhost:8080
-- **健康检查**: http://localhost:8080/health
+- **前端**: http://localhost:12321
+- **后端API**: http://localhost:12322
+- **健康检查**: http://localhost:12322/health
 
 ## 手动部署
 
@@ -84,7 +84,7 @@ server {
 
     # Frontend
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:12321;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -94,7 +94,7 @@ server {
 
     # Backend API
     location /api {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://localhost:12322;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

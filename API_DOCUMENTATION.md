@@ -314,25 +314,25 @@ Content-Type: application/json
 
 ```bash
 # 1. 注册用户
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:12322/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}'
 
 # 2. 登录获取JWT
-TOKEN=$(curl -X POST http://localhost:8080/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:12322/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"password123"}' \
   | jq -r '.token')
 
 # 3. 创建API密钥
-API_KEY=$(curl -X POST http://localhost:8080/api/keys \
+API_KEY=$(curl -X POST http://localhost:12322/api/keys \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"My Key"}' \
   | jq -r '.key')
 
 # 4. 使用API密钥调用OpenAI代理
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -341,7 +341,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }'
 
 # 5. 查看使用统计
-curl -X GET http://localhost:8080/api/usage/stats \
+curl -X GET http://localhost:12322/api/usage/stats \
   -H "Authorization: Bearer $TOKEN"
 ```
 

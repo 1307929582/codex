@@ -10,7 +10,7 @@
 # .env 文件
 DB_PASSWORD=your-secure-password
 JWT_SECRET=your-jwt-secret-min-32-chars
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 ```
 
 ### ❌ 不再需要的环境变量
@@ -45,7 +45,7 @@ nano .env
 ```.env
 DB_PASSWORD=your-secure-password
 JWT_SECRET=$(openssl rand -base64 32)
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 ```
 
 ### 3. 停止并重新构建
@@ -76,7 +76,7 @@ docker-compose logs -f backend
 **方式一：注册后提升**
 
 ```bash
-# 1. 访问 http://localhost:3000 注册账户
+# 1. 访问 http://localhost:12321 注册账户
 # 2. 提升为管理员
 docker exec -it codex-postgres psql -U postgres -d codex_gateway -c "UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';"
 ```
@@ -101,9 +101,9 @@ UPDATE users SET role = 'super_admin' WHERE email = 'your-email@example.com';
 
 ### 6. 配置OpenAI（管理员面板）
 
-1. 访问 `http://localhost:3000`
+1. 访问 `http://localhost:12321`
 2. 使用管理员账户登录
-3. 访问 `http://localhost:3000/admin/settings`
+3. 访问 `http://localhost:12321/admin/settings`
 4. 在"OpenAI配置"部分填写：
    - **OpenAI API密钥**：`sk-your-key-here`
    - **OpenAI Base URL**：`https://api.openai.com/v1`（或自定义代理）
@@ -113,11 +113,11 @@ UPDATE users SET role = 'super_admin' WHERE email = 'your-email@example.com';
 
 ```bash
 # 测试管理员API
-curl http://localhost:8080/api/admin/stats/overview \
+curl http://localhost:12322/api/admin/stats/overview \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # 测试OpenAI代理（需要先配置OpenAI密钥）
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"gpt-3.5-turbo","messages":[{"role":"user","content":"Hello"}]}'

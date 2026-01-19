@@ -237,7 +237,7 @@ cd codex
 ./deploy-auto.sh
 ```
 
-访问 `http://localhost:3000`，完成3步配置，立即使用！
+访问 `http://localhost:12321`，完成3步配置，立即使用！
 
 ---
 

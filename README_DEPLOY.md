@@ -10,7 +10,7 @@ cd codex
 
 ## 首次访问自动配置
 
-部署完成后，访问 `http://localhost:3000`，系统会自动跳转到配置向导：
+部署完成后，访问 `http://localhost:12321`，系统会自动跳转到配置向导：
 
 ### 第1步：创建管理员账户
 - 输入邮箱地址
@@ -69,12 +69,12 @@ cd codex
 # ================================
 #
 # 访问地址：
-#   前端:        http://localhost:3000
-#   管理员面板:  http://localhost:3000/admin
-#   后端API:     http://localhost:8080
+#   前端:        http://localhost:12321
+#   管理员面板:  http://localhost:12321/admin
+#   后端API:     http://localhost:12322
 
 # 3. 打开浏览器
-open http://localhost:3000
+open http://localhost:12321
 
 # 4. 自动跳转到 /setup 配置向导
 # 5. 完成3步配置
@@ -134,7 +134,7 @@ JWT_SECRET=<自动生成的40字符随机密钥>
 SERVER_PORT=8080
 
 # Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 ```
 
 ### 首次访问检测
@@ -252,7 +252,7 @@ docker-compose up -d
 ### 首次访问流程
 
 ```
-用户访问 http://localhost:3000
+用户访问 http://localhost:12321
     ↓
 前端检查 /api/setup/status
     ↓
@@ -276,7 +276,7 @@ POST /api/setup/initialize
 现在部署Codex Gateway只需要：
 
 1. **运行一个脚本**：`./deploy-auto.sh`
-2. **打开浏览器**：`http://localhost:3000`
+2. **打开浏览器**：`http://localhost:12321`
 3. **完成3步配置**：管理员 → OpenAI → 系统设置
 
 就这么简单！

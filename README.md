@@ -84,7 +84,7 @@ cd codex
 ./deploy-auto.sh
 
 # 3. 打开浏览器
-open http://localhost:3000
+open http://localhost:12321
 ```
 
 就这么简单！系统会自动：
@@ -95,7 +95,7 @@ open http://localhost:3000
 
 ### 首次安装向导
 
-访问 `http://localhost:3000` 后，系统会自动引导您完成3步配置：
+访问 `http://localhost:12321` 后，系统会自动引导您完成3步配置：
 
 1. **创建管理员账户**
    - 输入邮箱和密码
@@ -113,9 +113,9 @@ open http://localhost:3000
 
 ### 访问地址
 
-- **前端**: http://localhost:3000
-- **管理员面板**: http://localhost:3000/admin
-- **后端API**: http://localhost:8080
+- **前端**: http://localhost:12321
+- **管理员面板**: http://localhost:12321/admin
+- **后端API**: http://localhost:12322
 
 ---
 
@@ -176,7 +176,7 @@ cd frontend
 npm install
 
 # 配置环境变量
-echo "NEXT_PUBLIC_API_URL=http://localhost:8080" > .env.local
+echo "NEXT_PUBLIC_API_URL=http://localhost:12322" > .env.local
 
 # 启动开发服务器
 npm run dev
@@ -234,7 +234,7 @@ UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
 
 ### 管理员面板功能
 
-访问 `http://localhost:3000/admin` 可以：
+访问 `http://localhost:12321/admin` 可以：
 
 - 📊 查看系统统计（用户数、收入、消费）
 - 👥 管理用户（查看、暂停、调整余额）
@@ -257,7 +257,7 @@ DB_PASSWORD=your-secure-password
 JWT_SECRET=your-jwt-secret-min-32-chars
 
 # 前端API地址
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 ```
 
 ### 可选的环境变量

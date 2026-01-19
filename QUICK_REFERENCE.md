@@ -12,7 +12,7 @@ cd codex
 ./deploy-auto.sh
 ```
 
-访问: `http://localhost:3000`
+访问: `http://localhost:12321`
 
 ---
 
@@ -20,10 +20,10 @@ cd codex
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 前端 | http://localhost:3000 | 用户界面 |
-| 管理员面板 | http://localhost:3000/admin | 管理功能 |
-| 后端API | http://localhost:8080 | API服务 |
-| 健康检查 | http://localhost:8080/health | 服务状态 |
+| 前端 | http://localhost:12321 | 用户界面 |
+| 管理员面板 | http://localhost:12321/admin | 管理功能 |
+| 后端API | http://localhost:12322 | API服务 |
+| 健康检查 | http://localhost:12322/health | 服务状态 |
 
 ---
 
@@ -176,12 +176,12 @@ docker exec -it codex-postgres psql -U postgres -d codex_gateway -c \
 ### 用户认证
 ```bash
 # 注册
-curl -X POST http://localhost:8080/api/auth/register \
+curl -X POST http://localhost:12322/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password123"}'
 
 # 登录
-curl -X POST http://localhost:8080/api/auth/login \
+curl -X POST http://localhost:12322/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password123"}'
 
@@ -192,24 +192,24 @@ curl -X POST http://localhost:8080/api/auth/login \
 ### API密钥管理
 ```bash
 # 创建API密钥（需要JWT token）
-curl -X POST http://localhost:8080/api/keys \
+curl -X POST http://localhost:12322/api/keys \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"name":"My API Key"}'
 
 # 列出API密钥
-curl http://localhost:8080/api/keys \
+curl http://localhost:12322/api/keys \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 
 # 删除API密钥
-curl -X DELETE http://localhost:8080/api/keys/KEY_ID \
+curl -X DELETE http://localhost:12322/api/keys/KEY_ID \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
 ### OpenAI代理调用
 ```bash
 # 使用API密钥调用
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -229,7 +229,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 # 必需的环境变量（仅3个）
 DB_PASSWORD=your-secure-password
 JWT_SECRET=your-jwt-secret-min-32-chars
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 
 # 可选的环境变量（使用默认值）
 DB_HOST=localhost
@@ -240,7 +240,7 @@ SERVER_PORT=8080
 ```
 
 ### 系统设置（管理员面板）
-访问 `http://localhost:3000/admin/settings` 配置：
+访问 `http://localhost:12321/admin/settings` 配置：
 
 - **OpenAI API密钥**: 在Web界面配置
 - **OpenAI Base URL**: 支持自定义代理
@@ -262,10 +262,10 @@ docker-compose ps
 docker stats
 
 # 测试后端健康
-curl http://localhost:8080/health
+curl http://localhost:12322/health
 
 # 测试前端访问
-curl -I http://localhost:3000
+curl -I http://localhost:12321
 ```
 
 ### 查看日志

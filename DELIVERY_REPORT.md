@@ -129,7 +129,7 @@ VALUES (
 ### 4. 测试API
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
+curl -X POST http://localhost:12322/v1/chat/completions \
   -H "Authorization: Bearer sk-test123" \
   -H "Content-Type: application/json" \
   -d '{

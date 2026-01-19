@@ -18,7 +18,7 @@ cd codex
 
 ## 部署后
 
-1. 访问 `http://localhost:3000/admin`
+1. 访问 `http://localhost:12321/admin`
 2. 使用创建的管理员账户登录
 3. 在"系统设置"中配置OpenAI API密钥
 4. 开始使用！
