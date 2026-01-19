@@ -19,10 +19,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [isAuthenticated, router]);
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/keys', label: 'API Keys', icon: Key },
-    { href: '/usage', label: 'Usage', icon: Activity },
-    { href: '/account', label: 'Account', icon: User },
+    { href: '/dashboard', label: '控制台', icon: LayoutDashboard },
+    { href: '/keys', label: 'API密钥', icon: Key },
+    { href: '/usage', label: '使用记录', icon: Activity },
+    { href: '/account', label: '账户信息', icon: User },
   ];
 
   const handleLogout = () => {
@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           )}
           <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" /> Logout
+            <LogOut className="mr-2 h-4 w-4" /> 退出登录
           </Button>
         </div>
       </aside>

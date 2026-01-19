@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: '控制台', href: '/admin', icon: LayoutDashboard },
   { name: '用户管理', href: '/admin/users', icon: Users },
   { name: '系统设置', href: '/admin/settings', icon: Settings },
   { name: '操作日志', href: '/admin/logs', icon: FileText },
