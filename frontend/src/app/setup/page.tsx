@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api/client';
+import { useAuthStore } from '@/lib/stores/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function SetupWizard() {
   const router = useRouter();
+  const { setAuth } = useAuthStore();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -50,9 +52,18 @@ export default function SetupWizard() {
       const response = await api.post('/api/setup/initialize', formData);
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Auto login with the created admin account
       localStorage.setItem('token', data.token);
+
+      // Fetch user info and save to auth store
+      try {
+        const userResponse = await api.get('/api/auth/me');
+        setAuth(data.token, userResponse.data);
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      }
+
       router.push('/admin');
     },
   });
