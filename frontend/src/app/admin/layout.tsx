@@ -11,14 +11,12 @@ import {
   Activity,
   LogOut,
   ChevronRight,
-  ShieldCheck,
-  Plug
+  ShieldCheck
 } from 'lucide-react';
 
 const navigation = [
   { name: '控制台', href: '/admin', icon: LayoutDashboard },
   { name: '用户管理', href: '/admin/users', icon: Users },
-  { name: '服务集成', href: '/admin/integrations', icon: Plug },
   { name: '系统设置', href: '/admin/settings', icon: Settings },
   { name: '操作日志', href: '/admin/logs', icon: Activity },
 ];
