@@ -8,50 +8,50 @@ import (
 // SeedCodexPricing seeds Codex model pricing based on sub2api reference
 func SeedCodexPricing() error {
 	// Codex model pricing (per 1K tokens)
-	// Based on sub2api pricing with 1.5x markup
-	// Cache read tokens are typically 10% of input price (based on Claude pricing model)
+	// Exact pricing from sub2api's model_prices_and_context_window.json
+	// No markup applied - using cost price
 	codexModels := []models.ModelPricing{
 		{
 			ModelName:           "gpt-5.1-codex",
-			InputPricePer1k:     0.00138,  // $0.00138 per 1K tokens
-			OutputPricePer1k:    0.011,    // $0.011 per 1K tokens
-			CacheReadPricePer1k: 0.000138, // 10% of input price
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00125,  // 1.25e-06 per token
+			OutputPricePer1k:    0.01,     // 1e-05 per token
+			CacheReadPricePer1k: 0.000125, // 1.25e-07 per token
+			MarkupMultiplier:    1.0,
 		},
 		{
 			ModelName:           "gpt-5.1-codex-mini",
-			InputPricePer1k:     0.000275, // $0.000275 per 1K tokens
-			OutputPricePer1k:    0.0022,   // $0.0022 per 1K tokens
-			CacheReadPricePer1k: 0.0000275, // 10% of input price
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00025,  // 2.5e-07 per token
+			OutputPricePer1k:    0.002,    // 2e-06 per token
+			CacheReadPricePer1k: 0.000025, // 2.5e-08 per token
+			MarkupMultiplier:    1.0,
 		},
 		{
 			ModelName:           "gpt-5.1-codex-max",
-			InputPricePer1k:     0.00138,  // Same as standard codex
-			OutputPricePer1k:    0.011,
-			CacheReadPricePer1k: 0.000138,
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00125,  // Same as standard codex
+			OutputPricePer1k:    0.01,
+			CacheReadPricePer1k: 0.000125,
+			MarkupMultiplier:    1.0,
 		},
 		{
 			ModelName:           "gpt-5.2-codex",
-			InputPricePer1k:     0.00138,
-			OutputPricePer1k:    0.011,
-			CacheReadPricePer1k: 0.000138,
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00175,  // 1.75e-06 per token (gpt-5.2 pricing)
+			OutputPricePer1k:    0.014,    // 1.4e-05 per token
+			CacheReadPricePer1k: 0.000175, // 1.75e-07 per token
+			MarkupMultiplier:    1.0,
 		},
 		{
 			ModelName:           "gpt-5.1",
-			InputPricePer1k:     0.00138,
-			OutputPricePer1k:    0.011,
-			CacheReadPricePer1k: 0.000138,
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00125,
+			OutputPricePer1k:    0.01,
+			CacheReadPricePer1k: 0.000125,
+			MarkupMultiplier:    1.0,
 		},
 		{
 			ModelName:           "gpt-5.2",
-			InputPricePer1k:     0.00138,
-			OutputPricePer1k:    0.011,
-			CacheReadPricePer1k: 0.000138,
-			MarkupMultiplier:    1.5,
+			InputPricePer1k:     0.00175,
+			OutputPricePer1k:    0.014,
+			CacheReadPricePer1k: 0.000175,
+			MarkupMultiplier:    1.0,
 		},
 	}
 
