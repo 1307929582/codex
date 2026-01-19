@@ -364,14 +364,13 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 	}
 
 	// Calculate costs for each token type
-	// Note: input_tokens and cached_tokens are separate in Codex API
-	// input_tokens = new tokens that need processing (full price)
-	// cached_tokens = tokens from cache (discounted price, usually 50% off)
+	// Note: cached_tokens in Codex API = cache_read_tokens (tokens read from cache)
+	// These are billed at a discounted rate (typically 10% of input price)
 	inputCost := (float64(inputTokens) / 1000.0) * pricing.InputPricePer1k
-	cachedCost := (float64(cachedTokens) / 1000.0) * pricing.CachedInputPricePer1k
+	cacheReadCost := (float64(cachedTokens) / 1000.0) * pricing.CacheReadPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
 
-	return (inputCost + cachedCost + outputCost) * pricing.MarkupMultiplier, nil
+	return (inputCost + cacheReadCost + outputCost) * pricing.MarkupMultiplier, nil
 }
 
 func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens, cachedTokens int, cost float64, latencyMs int) error {

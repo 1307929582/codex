@@ -39,7 +39,7 @@ type ModelPricing struct {
 	ModelName            string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"model_name"`
 	InputPricePer1k      float64   `gorm:"type:decimal(10,6);not null" json:"input_price_per_1k"`
 	OutputPricePer1k     float64   `gorm:"type:decimal(10,6);not null" json:"output_price_per_1k"`
-	CachedInputPricePer1k float64  `gorm:"type:decimal(10,6);default:0" json:"cached_input_price_per_1k"` // Cached tokens pricing (usually 50% discount)
+	CacheReadPricePer1k  float64   `gorm:"type:decimal(10,6);default:0" json:"cache_read_price_per_1k"` // Cache read tokens pricing (usually 10% of input price)
 	MarkupMultiplier     float64   `gorm:"type:decimal(4,2);default:1.5" json:"markup_multiplier"`
 	EffectiveFrom        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"effective_from"`
 }
