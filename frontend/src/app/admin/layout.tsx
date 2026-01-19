@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/auth';
@@ -25,6 +26,24 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Wait for auth store to hydrate from localStorage
+    setIsLoading(false);
+  }, []);
+
+  // Show loading while hydrating
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Check if user is admin
   if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
@@ -33,6 +52,8 @@ export default function AdminLayout({
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">访问被拒绝</h1>
           <p className="mt-2 text-gray-600">您没有权限访问管理员面板</p>
+          <p className="mt-2 text-sm text-gray-500">当前用户: {user?.email || '未登录'}</p>
+          <p className="mt-1 text-sm text-gray-500">用户角色: {user?.role || '无'}</p>
           <Link
             href="/"
             className="mt-4 inline-block text-blue-600 hover:text-blue-700"
