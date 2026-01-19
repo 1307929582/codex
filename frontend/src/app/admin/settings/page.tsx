@@ -19,8 +19,6 @@ export default function AdminSettings() {
     default_balance: 0,
     min_recharge_amount: 10,
     registration_enabled: true,
-    openai_api_key: '',
-    openai_base_url: 'https://api.openai.com/v1',
   });
 
   useEffect(() => {
@@ -30,8 +28,6 @@ export default function AdminSettings() {
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
         registration_enabled: settings.registration_enabled ?? true,
-        openai_api_key: settings.openai_api_key || '',
-        openai_base_url: settings.openai_base_url || 'https://api.openai.com/v1',
       });
     }
   }, [settings]);
@@ -65,37 +61,8 @@ export default function AdminSettings() {
         </button>
       </div>
 
-      {/* OpenAI Configuration */}
-      <section className="grid gap-6 md:grid-cols-[200px_1fr]">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-900">服务集成</h2>
-          <p className="text-sm text-zinc-500">连接到AI服务商</p>
-        </div>
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700">OpenAI API密钥</label>
-            <input
-              type="password"
-              value={formData.openai_api_key}
-              onChange={(e) => setFormData({ ...formData, openai_api_key: e.target.value })}
-              className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10"
-              placeholder="sk-..."
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-700">Base URL</label>
-            <input
-              type="text"
-              value={formData.openai_base_url}
-              onChange={(e) => setFormData({ ...formData, openai_base_url: e.target.value })}
-              className="w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* User Onboarding */}
-      <section className="grid gap-6 md:grid-cols-[200px_1fr] pt-6 border-t border-zinc-100">
+      <section className="grid gap-6 md:grid-cols-[200px_1fr]">
         <div>
           <h2 className="text-base font-semibold text-zinc-900">用户入门</h2>
           <p className="text-sm text-zinc-500">新用户的默认设置</p>
