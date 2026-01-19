@@ -62,10 +62,10 @@ DB_SSLMODE=disable
 JWT_SECRET=${JWT_SECRET}
 
 # Server Configuration
-SERVER_PORT=8080
+SERVER_PORT=12322
 
 # Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:12322
 EOF
 
     echo -e "${GREEN}✓${NC} 配置文件已生成"
