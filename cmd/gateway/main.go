@@ -35,6 +35,10 @@ func main() {
 		log.Fatal("Failed to seed default pricing:", err)
 	}
 
+	if err := database.SeedCodexPricing(); err != nil {
+		log.Fatal("Failed to seed Codex pricing:", err)
+	}
+
 	router := gin.Default()
 
 	// CORS middleware
