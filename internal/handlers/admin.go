@@ -348,31 +348,52 @@ func AdminGetOverview(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-// AdminGetUsageChart gets hourly usage statistics for the last 24 hours (UTC+8)
+// AdminGetUsageChart gets usage statistics for different time ranges
 func AdminGetUsageChart(c *gin.Context) {
-	type HourlyUsage struct {
-		Hour string  `json:"hour"`
-		Cost float64 `json:"cost"`
+	timeRange := c.DefaultQuery("range", "24h") // 24h, 7d, 30d
+
+	type UsageData struct {
+		Label string  `json:"label"`
+		Cost  float64 `json:"cost"`
 	}
 
-	var hourlyData []HourlyUsage
-
-	// Calculate 24 hours ago in UTC for Asia/Shanghai timezone
-	// This avoids using timezone functions in WHERE clause which prevents index usage
+	var usageData []UsageData
 	shanghaiTZ, _ := time.LoadLocation("Asia/Shanghai")
 	now := time.Now().In(shanghaiTZ)
-	twentyFourHoursAgo := now.Add(-24 * time.Hour).UTC()
 
-	// Get hourly usage for the last 24 hours
-	// Note: We still use timezone conversion in SELECT for display purposes only
-	database.DB.Model(&models.UsageLog{}).
-		Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00') as hour, COALESCE(SUM(cost), 0) as cost").
-		Where("created_at >= ?", twentyFourHoursAgo).
-		Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00')").
-		Order("hour").
-		Scan(&hourlyData)
+	switch timeRange {
+	case "24h":
+		// Last 24 hours - hourly data
+		twentyFourHoursAgo := now.Add(-24 * time.Hour).UTC()
+		database.DB.Model(&models.UsageLog{}).
+			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00') as label, COALESCE(SUM(cost), 0) as cost").
+			Where("created_at >= ?", twentyFourHoursAgo).
+			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00')").
+			Order("label").
+			Scan(&usageData)
 
-	c.JSON(http.StatusOK, hourlyData)
+	case "7d":
+		// Last 7 days - daily data
+		sevenDaysAgo := now.AddDate(0, 0, -7).UTC()
+		database.DB.Model(&models.UsageLog{}).
+			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
+			Where("created_at >= ?", sevenDaysAgo).
+			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
+			Order("label").
+			Scan(&usageData)
+
+	case "30d":
+		// Last 30 days - daily data
+		thirtyDaysAgo := now.AddDate(0, 0, -30).UTC()
+		database.DB.Model(&models.UsageLog{}).
+			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
+			Where("created_at >= ?", thirtyDaysAgo).
+			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
+			Order("label").
+			Scan(&usageData)
+	}
+
+	c.JSON(http.StatusOK, usageData)
 }
 
 // AdminGetLogs gets admin operation logs

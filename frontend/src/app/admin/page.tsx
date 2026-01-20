@@ -1,19 +1,29 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { Users, DollarSign, Activity, Key } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin', 'overview'],
     queryFn: () => adminApi.getOverview(),
   });
 
   const { data: chartData } = useQuery({
-    queryKey: ['admin', 'usage-chart'],
-    queryFn: () => adminApi.getUsageChart(),
+    queryKey: ['admin', 'usage-chart', timeRange],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/stats/usage-chart?range=${timeRange}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      return response.json();
+    },
   });
 
   if (isLoading) return <DashboardSkeleton />;
@@ -46,10 +56,16 @@ export default function AdminDashboard() {
   ];
 
   // Transform chart data for recharts
-  const formattedChartData = chartData?.map(item => ({
-    hour: item.hour,
+  const formattedChartData = chartData?.map((item: any) => ({
+    label: item.label,
     cost: item.cost
   })) || [];
+
+  const timeRangeLabels = {
+    '24h': '24小时',
+    '7d': '7天',
+    '30d': '30天'
+  };
 
   return (
     <div className="space-y-8">
@@ -80,9 +96,26 @@ export default function AdminDashboard() {
 
       {/* Usage Trend Chart */}
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-        <div className="mb-6">
-          <h3 className="text-base font-semibold text-zinc-900">24小时使用趋势</h3>
-          <p className="mt-1 text-xs text-zinc-500">近24小时每小时消费统计</p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-zinc-900">使用趋势</h3>
+            <p className="mt-1 text-xs text-zinc-500">近{timeRangeLabels[timeRange]}消费统计</p>
+          </div>
+          <div className="flex gap-2">
+            {(['24h', '7d', '30d'] as const).map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`h-8 px-3 text-xs font-medium rounded-lg transition-colors ${
+                  timeRange === range
+                    ? 'bg-zinc-900 text-white'
+                    : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                }`}
+              >
+                {timeRangeLabels[range]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="h-[300px]">
           {formattedChartData.length > 0 ? (
@@ -90,7 +123,7 @@ export default function AdminDashboard() {
               <LineChart data={formattedChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  dataKey="hour"
+                  dataKey="label"
                   tick={{ fontSize: 12 }}
                   stroke="#888"
                 />
