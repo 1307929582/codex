@@ -165,7 +165,14 @@ func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 	if err == nil {
 		// User exists, update info
 		user.Username = userInfo.Username
-		user.AvatarURL = fmt.Sprintf("https://linux.do%s", userInfo.Avatar)
+		// Fix avatar URL - check if it already starts with http
+		if userInfo.Avatar != "" {
+			if len(userInfo.Avatar) > 4 && userInfo.Avatar[:4] == "http" {
+				user.AvatarURL = userInfo.Avatar
+			} else {
+				user.AvatarURL = fmt.Sprintf("https://linux.do%s", userInfo.Avatar)
+			}
+		}
 		if userInfo.Email != "" {
 			user.Email = userInfo.Email
 		}
@@ -181,7 +188,14 @@ func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 			user.OAuthProvider = "linuxdo"
 			user.OAuthID = fmt.Sprintf("%d", userInfo.ID)
 			user.Username = userInfo.Username
-			user.AvatarURL = fmt.Sprintf("https://linux.do%s", userInfo.Avatar)
+			// Fix avatar URL - check if it already starts with http
+			if userInfo.Avatar != "" {
+				if len(userInfo.Avatar) > 4 && userInfo.Avatar[:4] == "http" {
+					user.AvatarURL = userInfo.Avatar
+				} else {
+					user.AvatarURL = fmt.Sprintf("https://linux.do%s", userInfo.Avatar)
+				}
+			}
 			database.DB.Save(&user)
 			return &user, nil
 		}
@@ -194,12 +208,22 @@ func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 		email = fmt.Sprintf("linuxdo_%d@oauth.local", userInfo.ID)
 	}
 
+	// Fix avatar URL - check if it already starts with http
+	avatarURL := ""
+	if userInfo.Avatar != "" {
+		if len(userInfo.Avatar) > 4 && userInfo.Avatar[:4] == "http" {
+			avatarURL = userInfo.Avatar
+		} else {
+			avatarURL = fmt.Sprintf("https://linux.do%s", userInfo.Avatar)
+		}
+	}
+
 	user = models.User{
 		Email:         email,
 		Username:      userInfo.Username,
 		OAuthProvider: "linuxdo",
 		OAuthID:       fmt.Sprintf("%d", userInfo.ID),
-		AvatarURL:     fmt.Sprintf("https://linux.do%s", userInfo.Avatar),
+		AvatarURL:     avatarURL,
 		Balance:       defaultBalance,
 		Status:        "active",
 		Role:          "user",
