@@ -92,7 +92,8 @@ export interface SystemSettings {
   announcement: string;
   default_balance: number;
   min_recharge_amount: number;
-  registration_enabled: boolean;
+  email_registration_enabled: boolean;
+  linuxdo_registration_enabled: boolean;
   openai_api_key: string;
   openai_base_url: string;
   linuxdo_client_id: string;
