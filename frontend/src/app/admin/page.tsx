@@ -2,7 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Users, DollarSign, Activity, Key, ChevronRight } from 'lucide-react';
+import { Users, DollarSign, Activity, Key } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -44,6 +45,12 @@ export default function AdminDashboard() {
     },
   ];
 
+  // Transform chart data for recharts
+  const formattedChartData = chartData?.map(item => ({
+    hour: item.hour,
+    cost: item.cost
+  })) || [];
+
   return (
     <div className="space-y-8">
       <div>
@@ -71,61 +78,50 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Example Chart Area / Detailed Stats */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-zinc-900">24小时消费趋势</h3>
-            <span className="text-xs text-zinc-400">每小时</span>
-          </div>
-          <div className="space-y-2">
-            {chartData && chartData.length > 0 ? (
-              chartData.map((item) => {
-                const maxCost = Math.max(...chartData.map(d => d.cost));
-                const percentage = maxCost > 0 ? (item.cost / maxCost) * 100 : 0;
-                return (
-                  <div key={item.hour} className="flex items-center gap-3">
-                    <span className="text-xs text-zinc-500 w-12">{item.hour}</span>
-                    <div className="flex-1 h-6 bg-zinc-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium text-zinc-700 w-16 text-right">
-                      ${item.cost.toFixed(4)}
-                    </span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
-                <p className="text-sm text-zinc-400">暂无数据</p>
-              </div>
-            )}
-          </div>
+      {/* Usage Trend Chart */}
+      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
+        <div className="mb-6">
+          <h3 className="text-base font-semibold text-zinc-900">24小时使用趋势</h3>
+          <p className="mt-1 text-xs text-zinc-500">近24小时每小时消费统计</p>
         </div>
-
-        <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
-           <div className="mb-4">
-            <h3 className="font-semibold text-zinc-900">快速访问</h3>
-          </div>
-          <div className="grid gap-3">
-             {[
-               { name: '管理用户', href: '/admin/users' },
-               { name: '系统设置', href: '/admin/settings' },
-               { name: '查看日志', href: '/admin/logs' }
-             ].map((action) => (
-               <a
-                 key={action.name}
-                 href={action.href}
-                 className="flex w-full items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-               >
-                 {action.name}
-                 <ChevronRight className="h-4 w-4 text-zinc-400" />
-               </a>
-             ))}
-          </div>
+        <div className="h-[300px]">
+          {formattedChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={formattedChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="hour"
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e5ea',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  }}
+                  formatter={(value: number) => [`$${value.toFixed(4)}`, '消费']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="cost"
+                  stroke="#007aff"
+                  strokeWidth={2}
+                  dot={{ fill: '#007aff', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
+              <p className="text-sm text-zinc-400">暂无数据</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
