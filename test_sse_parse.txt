@@ -1,0 +1,7 @@
+data: {"type":"response.started","id":"resp_xxx"}
+
+data: {"type":"response.content_part.delta","delta":{"type":"text","text":"Hello"}}
+
+data: {"type":"response.completed","response":{"id":"resp_xxx","usage":{"input_tokens":15,"output_tokens":1000,"input_tokens_details":{"cached_tokens":2650}}}}
+
+data: [DONE]

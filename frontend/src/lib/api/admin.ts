@@ -5,6 +5,7 @@ import type {
   SystemSettings,
   AdminLog,
   PaginationResponse,
+  HourlyUsage,
 } from '@/types/api';
 
 export const adminApi = {
@@ -66,6 +67,11 @@ export const adminApi = {
   // Statistics
   getOverview: async () => {
     const response = await api.get<AdminStats>('/api/admin/stats/overview');
+    return response.data;
+  },
+
+  getUsageChart: async () => {
+    const response = await api.get<HourlyUsage[]>('/api/admin/stats/usage-chart');
     return response.data;
   },
 

@@ -10,14 +10,19 @@ export default function AdminDashboard() {
     queryFn: () => adminApi.getOverview(),
   });
 
+  const { data: chartData } = useQuery({
+    queryKey: ['admin', 'usage-chart'],
+    queryFn: () => adminApi.getUsageChart(),
+  });
+
   if (isLoading) return <DashboardSkeleton />;
 
   const metrics = [
     {
-      label: '总收入',
-      value: `$${(stats?.total_revenue || 0).toFixed(2)}`,
-      icon: DollarSign,
-      desc: '全部收入'
+      label: '总Token数',
+      value: (stats?.total_tokens || 0).toLocaleString(),
+      icon: Activity,
+      desc: '累计使用Token'
     },
     {
       label: '活跃用户',
@@ -34,7 +39,7 @@ export default function AdminDashboard() {
     {
       label: '今日请求',
       value: stats?.today_requests || 0,
-      icon: Activity,
+      icon: DollarSign,
       desc: '每日流量'
     },
   ];
@@ -70,11 +75,34 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-zinc-200">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-zinc-900">系统健康状态</h3>
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100"></span>
+            <h3 className="font-semibold text-zinc-900">24小时消费趋势</h3>
+            <span className="text-xs text-zinc-400">每小时</span>
           </div>
-          <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
-            <p className="text-sm text-zinc-400">活动图表可视化</p>
+          <div className="space-y-2">
+            {chartData && chartData.length > 0 ? (
+              chartData.map((item) => {
+                const maxCost = Math.max(...chartData.map(d => d.cost));
+                const percentage = maxCost > 0 ? (item.cost / maxCost) * 100 : 0;
+                return (
+                  <div key={item.hour} className="flex items-center gap-3">
+                    <span className="text-xs text-zinc-500 w-12">{item.hour}</span>
+                    <div className="flex-1 h-6 bg-zinc-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-zinc-700 w-16 text-right">
+                      ${item.cost.toFixed(4)}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
+                <p className="text-sm text-zinc-400">暂无数据</p>
+              </div>
+            )}
           </div>
         </div>
 

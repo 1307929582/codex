@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Codex Gateway 定价诊断脚本
+
+echo "========================================="
+echo "Codex Gateway 定价诊断"
+echo "========================================="
+echo ""
+
+echo "步骤 1: 检查数据库中的定价配置"
+echo "-----------------------------------"
+echo "请在服务器上运行以下 SQL 查询："
+echo ""
+echo "docker exec -it codex-gateway-db-1 psql -U codex_user -d codex_gateway -c \\"
+echo "  \"SELECT model_name, input_price_per_1k, output_price_per_1k, cache_read_price_per_1k, markup_multiplier FROM model_pricings WHERE model_name LIKE 'gpt-5%codex%';\""
+echo ""
+
+echo "步骤 2: 检查最近的使用记录"
+echo "-----------------------------------"
+echo "docker exec -it codex-gateway-db-1 psql -U codex_user -d codex_gateway -c \\"
+echo "  \"SELECT model, input_tokens, output_tokens, cached_tokens, cost, created_at FROM usage_logs ORDER BY created_at DESC LIMIT 5;\""
+echo ""
+
+echo "步骤 3: 手动计算费用"
+echo "-----------------------------------"
+echo "根据您的数据："
+echo "- 输入 tokens: 1252"
+echo "- 输出 tokens: 11273"
+echo "- 缓存 tokens: (未知)"
+echo "- 实际费用: \$0.2400"
+echo ""
+
+echo "如果定价是："
+echo "- InputPricePer1k: \$0.00138"
+echo "- OutputPricePer1k: \$0.011"
+echo "- MarkupMultiplier: 1.5"
+echo ""
+
+echo "计算："
+echo "inputCost = (1252 / 1000) × \$0.00138 = \$0.00172776"
+echo "outputCost = (11273 / 1000) × \$0.011 = \$0.124003"
+echo "total = (\$0.00172776 + \$0.124003) × 1.5 = \$0.1886"
+echo ""
+echo "但实际是 \$0.2400，差异: $(echo "scale=4; 0.2400 / 0.1886" | bc)x"
+echo ""
+
+echo "步骤 4: 检查代码中的计费逻辑"
+echo "-----------------------------------"
+echo "查看 internal/handlers/proxy.go 的 calculateCostWithCache 函数"
+echo ""
+
+echo "步骤 5: 对比 Sub2API"
+echo "-----------------------------------"
+echo "Sub2API 显示："
+echo "- 输入: 11,771"
+echo "- 输出: 306"
+echo "- 费用: \$0.024883"
+echo ""
+echo "注意：输入/输出数量完全相反！"
+echo ""
+
+echo "可能的问题："
+echo "1. ❓ 我们把输入和输出搞反了"
+echo "2. ❓ 定价配置错误（可能是 per token 而不是 per 1K）"
+echo "3. ❓ 数据库中的定价值不正确"
+echo "4. ❓ Markup 被应用了多次"
+echo ""
+
+echo "========================================="
+echo "请在服务器上运行上述 SQL 查询并提供结果"
+echo "========================================="

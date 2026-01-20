@@ -135,6 +135,7 @@ func main() {
 
 			// Statistics
 			admin.GET("/stats/overview", handlers.AdminGetOverview)
+			admin.GET("/stats/usage-chart", handlers.AdminGetUsageChart)
 
 			// Logs
 			admin.GET("/logs", handlers.AdminGetLogs)

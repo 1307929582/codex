@@ -114,11 +114,16 @@ export interface AdminLog {
 export interface AdminStats {
   total_users: number;
   active_users: number;
-  total_revenue: number;
+  total_tokens: number;
   total_cost: number;
   total_api_keys: number;
   today_requests: number;
   today_revenue: number;
+}
+
+export interface HourlyUsage {
+  hour: string;
+  cost: number;
 }
 
 export interface PaginationResponse<T> {

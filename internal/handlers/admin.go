@@ -274,7 +274,7 @@ func AdminGetOverview(c *gin.Context) {
 	var stats struct {
 		TotalUsers    int64   `json:"total_users"`
 		ActiveUsers   int64   `json:"active_users"`
-		TotalRevenue  float64 `json:"total_revenue"`
+		TotalTokens   int64   `json:"total_tokens"`
 		TotalCost     float64 `json:"total_cost"`
 		TotalAPIKeys  int64   `json:"total_api_keys"`
 		TodayRequests int64   `json:"today_requests"`
@@ -287,11 +287,10 @@ func AdminGetOverview(c *gin.Context) {
 	// Active users
 	database.DB.Model(&models.User{}).Where("status = ?", "active").Count(&stats.ActiveUsers)
 
-	// Total revenue (deposits)
-	database.DB.Model(&models.Transaction{}).
-		Where("type IN ?", []string{"deposit", "admin_adjustment"}).
-		Select("COALESCE(SUM(amount), 0)").
-		Scan(&stats.TotalRevenue)
+	// Total tokens
+	database.DB.Model(&models.UsageLog{}).
+		Select("COALESCE(SUM(total_tokens), 0)").
+		Scan(&stats.TotalTokens)
 
 	// Total cost (usage)
 	database.DB.Model(&models.UsageLog{}).
@@ -301,18 +300,38 @@ func AdminGetOverview(c *gin.Context) {
 	// Total API keys
 	database.DB.Model(&models.APIKey{}).Count(&stats.TotalAPIKeys)
 
-	// Today's requests
+	// Today's requests (using timezone-aware query)
 	database.DB.Model(&models.UsageLog{}).
-		Where("DATE(created_at) = CURRENT_DATE").
+		Where("created_at >= CURRENT_DATE AND created_at < CURRENT_DATE + INTERVAL '1 day'").
 		Count(&stats.TodayRequests)
 
 	// Today's revenue
 	database.DB.Model(&models.UsageLog{}).
-		Where("DATE(created_at) = CURRENT_DATE").
+		Where("created_at >= CURRENT_DATE AND created_at < CURRENT_DATE + INTERVAL '1 day'").
 		Select("COALESCE(SUM(cost), 0)").
 		Scan(&stats.TodayRevenue)
 
 	c.JSON(http.StatusOK, stats)
+}
+
+// AdminGetUsageChart gets hourly usage statistics for the last 24 hours
+func AdminGetUsageChart(c *gin.Context) {
+	type HourlyUsage struct {
+		Hour string  `json:"hour"`
+		Cost float64 `json:"cost"`
+	}
+
+	var hourlyData []HourlyUsage
+
+	// Get hourly usage for the last 24 hours
+	database.DB.Model(&models.UsageLog{}).
+		Select("TO_CHAR(created_at, 'HH24:00') as hour, COALESCE(SUM(cost), 0) as cost").
+		Where("created_at >= NOW() - INTERVAL '24 hours'").
+		Group("TO_CHAR(created_at, 'HH24:00')").
+		Order("hour").
+		Scan(&hourlyData)
+
+	c.JSON(http.StatusOK, hourlyData)
 }
 
 // AdminGetLogs gets admin operation logs
