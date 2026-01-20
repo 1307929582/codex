@@ -15,6 +15,7 @@ export const packageApi = {
     duration_days: number;
     daily_limit: number;
     sort_order?: number;
+    stock?: number;
   }) => {
     const response = await api.post<Package>('/api/admin/packages', data);
     return response.data;
@@ -27,6 +28,7 @@ export const packageApi = {
     duration_days?: number;
     daily_limit?: number;
     sort_order?: number;
+    stock?: number;
   }) => {
     const response = await api.put<Package>(`/api/admin/packages/${id}`, data);
     return response.data;
