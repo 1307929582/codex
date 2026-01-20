@@ -149,6 +149,9 @@ func main() {
 			// Pricing Service Status
 			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
 			admin.POST("/pricing/reset", handlers.AdminResetPricing)
+			admin.GET("/pricing", handlers.AdminListPricing)
+			admin.PUT("/pricing/:id", handlers.AdminUpdatePricing)
+			admin.POST("/pricing/batch-update-markup", handlers.AdminBatchUpdateMarkup)
 
 			// Package Management
 			admin.GET("/packages", handlers.AdminListPackages)
