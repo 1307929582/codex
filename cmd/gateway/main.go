@@ -119,6 +119,7 @@ func main() {
 			// Usage & Billing
 			protected.GET("/usage/logs", handlers.GetUsageLogs)
 			protected.GET("/usage/stats", handlers.GetUsageStats)
+			protected.GET("/usage/daily-trend", handlers.GetDailyTrend)
 			protected.GET("/account/balance", handlers.GetBalance)
 			protected.GET("/account/transactions", handlers.GetTransactions)
 		}

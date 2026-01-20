@@ -34,8 +34,24 @@ export default function DashboardPage() {
     queryFn: () => packageApi.getDailyUsage(),
   });
 
+  const { data: dailyTrend } = useQuery({
+    queryKey: ['daily-trend', activeTab],
+    queryFn: async () => {
+      const typeMap: Record<string, string> = {
+        request: 'requests',
+        cost: 'cost',
+        distribution: 'cost',
+        ranking: 'cost',
+      };
+      const res = await apiClient.get('/api/usage/daily-trend', {
+        params: { type: typeMap[activeTab] || 'cost' },
+      });
+      return res.data;
+    },
+  });
+
   // Mock 7-day data for chart (replace with real API data)
-  const chartData = [
+  const chartData = dailyTrend || [
     { date: '01-14', value: 0 },
     { date: '01-15', value: 0 },
     { date: '01-16', value: 0 },
@@ -44,6 +60,8 @@ export default function DashboardPage() {
     { date: '01-19', value: 0 },
     { date: '01-20', value: 0 },
   ];
+
+  const chartTotal = chartData.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
 
   if (isLoading) {
     return (
@@ -89,7 +107,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{stats?.seven_days_requests || 0}</div>
           </CardContent>
         </Card>
 
@@ -106,7 +124,7 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">$0.00</div>
+            <div className="text-3xl font-bold">${stats?.seven_days_cost?.toFixed(2) || '0.00'}</div>
           </CardContent>
         </Card>
 
@@ -118,7 +136,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">0</div>
+            <div className="text-3xl font-bold">{stats?.seven_days_tokens || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -211,7 +229,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-right text-sm text-muted-foreground">
-            总计: $0.0000
+            总计: ${activeTab === 'request' ? chartTotal.toFixed(0) : chartTotal.toFixed(4)}
           </div>
         </CardContent>
       </Card>
