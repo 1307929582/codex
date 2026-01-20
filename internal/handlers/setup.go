@@ -40,13 +40,14 @@ func SetupInitialize(c *gin.Context) {
 	}
 
 	var req struct {
-		Email                string  `json:"email" binding:"required,email"`
-		Password             string  `json:"password" binding:"required,min=6"`
-		OpenAIAPIKey         string  `json:"openai_api_key" binding:"required"`
-		OpenAIBaseURL        string  `json:"openai_base_url"`
-		Announcement         string  `json:"announcement"`
-		DefaultBalance       float64 `json:"default_balance"`
-		RegistrationEnabled  bool    `json:"registration_enabled"`
+		Email                      string  `json:"email" binding:"required,email"`
+		Password                   string  `json:"password" binding:"required,min=6"`
+		OpenAIAPIKey               string  `json:"openai_api_key" binding:"required"`
+		OpenAIBaseURL              string  `json:"openai_base_url"`
+		Announcement               string  `json:"announcement"`
+		DefaultBalance             float64 `json:"default_balance"`
+		EmailRegistrationEnabled   bool    `json:"email_registration_enabled"`
+		LinuxDoRegistrationEnabled bool    `json:"linuxdo_registration_enabled"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,13 +78,14 @@ func SetupInitialize(c *gin.Context) {
 
 		// Create system settings
 		settings := models.SystemSettings{
-			ID:                  1,
-			Announcement:        req.Announcement,
-			DefaultBalance:      req.DefaultBalance,
-			MinRechargeAmount:   10,
-			RegistrationEnabled: req.RegistrationEnabled,
-			OpenAIAPIKey:        req.OpenAIAPIKey,
-			OpenAIBaseURL:       req.OpenAIBaseURL,
+			ID:                         1,
+			Announcement:               req.Announcement,
+			DefaultBalance:             req.DefaultBalance,
+			MinRechargeAmount:          10,
+			EmailRegistrationEnabled:   req.EmailRegistrationEnabled,
+			LinuxDoRegistrationEnabled: req.LinuxDoRegistrationEnabled,
+			OpenAIAPIKey:               req.OpenAIAPIKey,
+			OpenAIBaseURL:              req.OpenAIBaseURL,
 		}
 
 		if settings.OpenAIBaseURL == "" {

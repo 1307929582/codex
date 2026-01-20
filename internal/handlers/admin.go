@@ -237,10 +237,11 @@ func AdminGetSettings(c *gin.Context) {
 	if err := database.DB.First(&settings).Error; err != nil {
 		// If no settings exist, return defaults
 		settings = models.SystemSettings{
-			Announcement:        "",
-			DefaultBalance:      0,
-			MinRechargeAmount:   10,
-			RegistrationEnabled: true,
+			Announcement:               "",
+			DefaultBalance:             0,
+			MinRechargeAmount:          10,
+			EmailRegistrationEnabled:   true,
+			LinuxDoRegistrationEnabled: true,
 		}
 	}
 
