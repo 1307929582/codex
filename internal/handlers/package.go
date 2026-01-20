@@ -30,11 +30,17 @@ func AdminCreatePackage(c *gin.Context) {
 		DurationDays int     `json:"duration_days" binding:"required,gt=0"`
 		DailyLimit   float64 `json:"daily_limit" binding:"required,gt=0"`
 		SortOrder    int     `json:"sort_order"`
+		Stock        *int    `json:"stock"` // Pointer to allow -1 value
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
+	}
+
+	stock := -1 // Default to unlimited
+	if req.Stock != nil {
+		stock = *req.Stock
 	}
 
 	pkg := models.Package{
@@ -45,6 +51,7 @@ func AdminCreatePackage(c *gin.Context) {
 		DailyLimit:   req.DailyLimit,
 		Status:       "active",
 		SortOrder:    req.SortOrder,
+		Stock:        stock,
 	}
 
 	if err := database.DB.Create(&pkg).Error; err != nil {
