@@ -75,8 +75,9 @@ func AdminBatchUpdateMarkup(c *gin.Context) {
 		return
 	}
 
-	// Update all models
+	// Update all models - use Where clause to ensure all records are updated
 	result := database.DB.Model(&models.ModelPricing{}).
+		Where("id > ?", 0).
 		Updates(map[string]interface{}{
 			"markup_multiplier": req.MarkupMultiplier,
 		})
