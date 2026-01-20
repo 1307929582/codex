@@ -62,6 +62,7 @@ func AdminListOrders(c *gin.Context) {
 		OrderNo       string  `json:"order_no"`
 		UserID        string  `json:"user_id"`
 		UserEmail     string  `json:"user_email"`
+		Username      string  `json:"username"`
 		PackageID     *uint   `json:"package_id"`
 		Amount        float64 `json:"amount"`
 		Status        string  `json:"status"`
@@ -84,6 +85,7 @@ func AdminListOrders(c *gin.Context) {
 			OrderNo:       order.OrderNo,
 			UserID:        order.UserID.String(),
 			UserEmail:     order.User.Email,
+			Username:      order.User.Username,
 			PackageID:     order.PackageID,
 			Amount:        order.Amount,
 			Status:        order.Status,

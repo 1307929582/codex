@@ -94,7 +94,9 @@ export default function OrdersPage() {
                 {data?.orders.map((order) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{order.order_no}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">{order.user_email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {order.username || order.user_email}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">¥{order.amount.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusBadge(order.status)}`}>

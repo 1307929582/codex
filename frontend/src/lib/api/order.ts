@@ -5,6 +5,7 @@ export interface PaymentOrder {
   order_no: string;
   user_id: string;
   user_email: string;
+  username?: string;
   package_id: number | null;
   amount: number;
   status: string;
