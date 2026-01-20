@@ -72,6 +72,7 @@ func AdminUpdatePackage(c *gin.Context) {
 		DurationDays int     `json:"duration_days"`
 		DailyLimit   float64 `json:"daily_limit"`
 		SortOrder    int     `json:"sort_order"`
+		Stock        *int    `json:"stock"` // Pointer to allow -1 value
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -93,6 +94,9 @@ func AdminUpdatePackage(c *gin.Context) {
 		pkg.DailyLimit = req.DailyLimit
 	}
 	pkg.SortOrder = req.SortOrder
+	if req.Stock != nil {
+		pkg.Stock = *req.Stock
+	}
 
 	if err := database.DB.Save(&pkg).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update package"})
