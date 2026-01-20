@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"codex-gateway/internal/billing"
 	"codex-gateway/internal/codex"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
@@ -413,12 +414,9 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 
 func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens, cachedTokens int, cost float64, latencyMs int) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
-		result := tx.Exec("UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?", cost, userID, cost)
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected == 0 {
-			return fmt.Errorf("insufficient balance or user not found")
+		// Use new billing logic that supports package quota
+		if err := billing.DeductCost(tx, userID, cost); err != nil {
+			return err
 		}
 
 		log := models.UsageLog{

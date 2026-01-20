@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"codex-gateway/internal/billing"
 	"codex-gateway/internal/config"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/handlers"
@@ -61,6 +62,10 @@ func main() {
 	healthChecker := upstream.GetHealthChecker()
 	healthChecker.Start()
 	defer healthChecker.Stop()
+
+	// Start package expiration job
+	billing.StartPackageExpirationJob()
+	log.Println("Package expiration job started")
 
 	router := gin.Default()
 
@@ -144,6 +149,13 @@ func main() {
 			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
 			admin.POST("/pricing/reset", handlers.AdminResetPricing)
 
+			// Package Management
+			admin.GET("/packages", handlers.AdminListPackages)
+			admin.POST("/packages", handlers.AdminCreatePackage)
+			admin.PUT("/packages/:id", handlers.AdminUpdatePackage)
+			admin.DELETE("/packages/:id", handlers.AdminDeletePackage)
+			admin.PUT("/packages/:id/status", handlers.AdminUpdatePackageStatus)
+
 			// Codex Upstream Management
 			admin.GET("/codex/upstreams", handlers.AdminListCodexUpstreams)
 			admin.GET("/codex/upstreams/:id", handlers.AdminGetCodexUpstream)
@@ -156,6 +168,21 @@ func main() {
 			admin.GET("/codex/upstreams/health", handlers.AdminGetUpstreamHealth)
 			admin.POST("/codex/upstreams/health/check", handlers.AdminTriggerHealthCheck)
 		}
+
+		// User Routes (authenticated)
+		user := apiGroup.Group("")
+		user.Use(middleware.JWTAuthMiddleware())
+		{
+			// Package Routes
+			user.GET("/packages", handlers.ListPackages)
+			user.POST("/packages/:id/purchase", handlers.PurchasePackage)
+			user.GET("/user/packages", handlers.GetUserPackages)
+			user.GET("/user/daily-usage", handlers.GetUserDailyUsage)
+		}
+
+		// Payment Callback Routes (no auth required)
+		apiGroup.GET("/payment/credit/notify", handlers.CreditNotify)
+		apiGroup.GET("/payment/credit/return", handlers.CreditReturn)
 	}
 
 	// Data Plane API (OpenAI/Codex Proxy)

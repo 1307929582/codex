@@ -97,8 +97,49 @@ export interface SystemSettings {
   linuxdo_client_id: string;
   linuxdo_client_secret: string;
   linuxdo_enabled: boolean;
+  credit_enabled: boolean;
+  credit_pid: string;
+  credit_key: string;
+  credit_notify_url: string;
+  credit_return_url: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Package {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  duration_days: number;
+  daily_limit: number;
+  status: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserPackage {
+  id: string;
+  user_id: string;
+  package_id: number;
+  package_name: string;
+  package_price: number;
+  duration_days: number;
+  daily_limit: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DailyUsage {
+  date: string;
+  used_amount: number;
+  package?: UserPackage;
+  daily_limit?: number;
+  remaining?: number;
 }
 
 export interface AdminLog {
