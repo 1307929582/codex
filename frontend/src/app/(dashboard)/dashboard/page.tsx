@@ -1,13 +1,18 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import apiClient from '@/lib/api/client';
 import { packageApi } from '@/lib/api/package';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Activity, TrendingUp, Key, Package, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useAuthStore } from '@/lib/stores/auth';
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState('request');
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['usage-stats'],
     queryFn: async () => {
@@ -24,122 +29,236 @@ export default function DashboardPage() {
     },
   });
 
-  const { data: keys } = useQuery({
-    queryKey: ['keys'],
-    queryFn: async () => {
-      const res = await apiClient.get('/api/keys');
-      return res.data;
-    },
-  });
-
   const { data: dailyUsage } = useQuery({
     queryKey: ['daily-usage'],
     queryFn: () => packageApi.getDailyUsage(),
   });
 
+  // Mock 7-day data for chart (replace with real API data)
+  const chartData = [
+    { date: '01-14', value: 0 },
+    { date: '01-15', value: 0 },
+    { date: '01-16', value: 0 },
+    { date: '01-17', value: 0 },
+    { date: '01-18', value: 0 },
+    { date: '01-19', value: 0 },
+    { date: '01-20', value: 0 },
+  ];
+
   if (isLoading) {
-    return <div>加载中...</div>;
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    );
   }
 
-  const activeKeysCount = keys?.filter((k: any) => k.status === 'active').length || 0;
-
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">控制台</h2>
-        <p className="text-muted-foreground">欢迎使用 Zenscale Codex</p>
-      </div>
+    <div className="space-y-6">
+      {/* Header Card */}
+      <Card className="border-none shadow-none">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-2xl font-semibold">仪表盘</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            欢迎回来，{user?.username || user?.email || 'eqbbzjx'}
+          </p>
+        </CardHeader>
+      </Card>
 
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Account Balance */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">账户余额</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              账户余额
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${balance?.balance?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">可用额度</p>
+            <div className="text-3xl font-bold">
+              ${balance?.balance?.toFixed(2) || '0.00'}
+            </div>
           </CardContent>
         </Card>
 
+        {/* 7-Day Requests */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今日消费</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              7日请求
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.today_cost?.toFixed(4) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">今日使用量</p>
+            <div className="text-3xl font-bold">0</div>
           </CardContent>
         </Card>
 
+        {/* 7-Day Cost */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">本月消费</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                7日消费
+              </CardTitle>
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                全部
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.month_cost?.toFixed(2) || '0.00'}</div>
-            <p className="text-xs text-muted-foreground">本月累计</p>
+            <div className="text-3xl font-bold">$0.00</div>
           </CardContent>
         </Card>
 
+        {/* 7-Day Tokens */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">活跃密钥</CardTitle>
-            <Key className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              7日Token
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeKeysCount}</div>
-            <p className="text-xs text-muted-foreground">API密钥数量</p>
+            <div className="text-3xl font-bold">0</div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Usage Analysis Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">
+                使用数据分析
+              </CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">近7天</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={activeTab === 'request' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('request')}
+                className="h-8 text-xs"
+              >
+                请求趋势
+              </Button>
+              <Button
+                variant={activeTab === 'cost' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('cost')}
+                className="h-8 text-xs"
+              >
+                消费趋势
+              </Button>
+              <Button
+                variant={activeTab === 'distribution' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('distribution')}
+                className="h-8 text-xs"
+              >
+                模型分布
+              </Button>
+              <Button
+                variant={activeTab === 'ranking' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('ranking')}
+                className="h-8 text-xs"
+              >
+                消费排行
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="text-lg font-semibold">
+              {activeTab === 'request' && '请求趋势'}
+              {activeTab === 'cost' && '消费趋势'}
+              {activeTab === 'distribution' && '模型分布'}
+              {activeTab === 'ranking' && '消费排行'}
+            </div>
+          </div>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  stroke="#888"
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e5ea',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#007aff"
+                  strokeWidth={2}
+                  dot={{ fill: '#007aff', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 text-right text-sm text-muted-foreground">
+            总计: $0.0000
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Package Status */}
       {dailyUsage?.package && (
-        <Card className="border-emerald-200 bg-emerald-50/50">
+        <Card className="border-apple-blue/20 bg-apple-blue/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-900">
-              <Package className="h-5 w-5" />
+            <CardTitle className="text-base font-semibold text-apple-blue">
               当前套餐
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-emerald-900">
+                <span className="text-sm font-medium">
                   {dailyUsage.package.package_name}
                 </span>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                <span className="rounded-full bg-apple-blue/10 px-2.5 py-0.5 text-xs font-medium text-apple-blue">
                   活跃中
                 </span>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-700">今日已用</span>
-                  <span className="font-medium text-emerald-900">
+                  <span className="text-muted-foreground">今日已用</span>
+                  <span className="font-medium">
                     ${dailyUsage.used_amount?.toFixed(4) || '0.00'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-700">每日限额</span>
-                  <span className="font-medium text-emerald-900">
+                  <span className="text-muted-foreground">每日限额</span>
+                  <span className="font-medium">
                     ${dailyUsage.daily_limit?.toFixed(2) || '0.00'}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-700">剩余额度</span>
-                  <span className="font-medium text-emerald-900">
+                  <span className="text-muted-foreground">剩余额度</span>
+                  <span className="font-medium">
                     ${dailyUsage.remaining?.toFixed(4) || '0.00'}
                   </span>
                 </div>
               </div>
 
-              <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-apple-blue/10">
                 <div
-                  className="h-full bg-emerald-500 transition-all"
+                  className="h-full bg-apple-blue transition-all"
                   style={{
                     width: `${Math.min(
                       ((dailyUsage.used_amount || 0) / (dailyUsage.daily_limit || 1)) * 100,
@@ -149,64 +268,32 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-emerald-700">
-                <Calendar className="h-3 w-3" />
-                <span>
-                  有效期至 {new Date(dailyUsage.package.end_date).toLocaleDateString('zh-CN')}
-                </span>
+              <div className="text-xs text-muted-foreground">
+                有效期至 {new Date(dailyUsage.package.end_date).toLocaleDateString('zh-CN')}
               </div>
-
-              <Link
-                href="/packages"
-                className="block w-full rounded-lg border border-emerald-300 bg-white px-4 py-2 text-center text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50"
-              >
-                查看更多套餐
-              </Link>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* No Package - Promote Packages */}
+      {/* No Package Promotion */}
       {!dailyUsage?.package && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-apple-blue/20 bg-apple-blue/5">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
-              <Package className="h-5 w-5" />
-              购买套餐
+            <CardTitle className="text-base font-semibold text-apple-blue">
+              订阅套餐
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-4 text-sm text-blue-700">
+            <p className="mb-4 text-sm text-muted-foreground">
               购买套餐享受每日固定额度，超出部分自动从余额扣费，更加灵活便捷。
             </p>
-            <Link
-              href="/packages"
-              className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              查看套餐
-            </Link>
+            <Button className="w-full" asChild>
+              <a href="/packages">查看套餐</a>
+            </Button>
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>统计概览</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">总消费（全部时间）</span>
-              <span className="text-sm font-bold">${stats?.total_cost?.toFixed(2) || '0.00'}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">API密钥总数</span>
-              <span className="text-sm font-bold">{keys?.length || 0}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
