@@ -49,10 +49,11 @@ func GetUsageLogs(c *gin.Context) {
 
 func GetUsageStats(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
-	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	sevenDaysAgo := now.AddDate(0, 0, -7)
+	shanghaiTZ, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(shanghaiTZ)
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, shanghaiTZ).UTC()
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, shanghaiTZ).UTC()
+	sevenDaysAgo := now.AddDate(0, 0, -7).UTC()
 
 	var todayCost, monthCost, totalCost, sevenDaysCost float64
 	var sevenDaysRequests, sevenDaysTokens int64
@@ -105,11 +106,12 @@ func GetDailyTrend(c *gin.Context) {
 	}
 
 	var results []DailyData
-	now := time.Now()
+	shanghaiTZ, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(shanghaiTZ)
 
 	for i := 6; i >= 0; i-- {
 		date := now.AddDate(0, 0, -i)
-		startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+		startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, shanghaiTZ).UTC()
 		endOfDay := startOfDay.Add(24 * time.Hour)
 		dateStr := date.Format("01-02")
 
