@@ -64,10 +64,11 @@ export default function AdminPricingPage() {
     if (!editingPricing) return;
 
     const formData = new FormData(e.currentTarget);
+    // Convert from $/1M (user input) to $/1K (backend storage)
     const data = {
-      input_price_per_1k: parseFloat(formData.get('input_price_per_1k') as string),
-      output_price_per_1k: parseFloat(formData.get('output_price_per_1k') as string),
-      cache_read_price_per_1k: parseFloat(formData.get('cache_read_price_per_1k') as string),
+      input_price_per_1k: parseFloat(formData.get('input_price_per_1k') as string) / 1000,
+      output_price_per_1k: parseFloat(formData.get('output_price_per_1k') as string) / 1000,
+      cache_read_price_per_1k: parseFloat(formData.get('cache_read_price_per_1k') as string) / 1000,
       markup_multiplier: parseFloat(formData.get('markup_multiplier') as string),
     };
 
@@ -133,13 +134,13 @@ export default function AdminPricingPage() {
                   模型名称
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                  输入价格 ($/1K)
+                  输入价格 ($/1M)
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                  输出价格 ($/1K)
+                  输出价格 ($/1M)
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                  缓存价格 ($/1K)
+                  缓存价格 ($/1M)
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
                   价格比例
@@ -156,13 +157,13 @@ export default function AdminPricingPage() {
                     {pricing.model_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-zinc-600">
-                    ${pricing.input_price_per_1k.toFixed(6)}
+                    ${(pricing.input_price_per_1k * 1000).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-zinc-600">
-                    ${pricing.output_price_per_1k.toFixed(6)}
+                    ${(pricing.output_price_per_1k * 1000).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-zinc-600">
-                    ${pricing.cache_read_price_per_1k.toFixed(6)}
+                    ${(pricing.cache_read_price_per_1k * 1000).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                     <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-600/20">
@@ -195,42 +196,51 @@ export default function AdminPricingPage() {
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  输入价格 ($/1K tokens)
+                  输入价格 ($/1M tokens)
                 </label>
                 <input
                   type="number"
                   name="input_price_per_1k"
-                  step="0.000001"
-                  defaultValue={editingPricing.input_price_per_1k}
+                  step="0.01"
+                  defaultValue={(editingPricing.input_price_per_1k * 1000).toFixed(2)}
                   required
                   className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  显示为 $/1M，实际存储为 $/1K
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  输出价格 ($/1K tokens)
+                  输出价格 ($/1M tokens)
                 </label>
                 <input
                   type="number"
                   name="output_price_per_1k"
-                  step="0.000001"
-                  defaultValue={editingPricing.output_price_per_1k}
+                  step="0.01"
+                  defaultValue={(editingPricing.output_price_per_1k * 1000).toFixed(2)}
                   required
                   className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  显示为 $/1M，实际存储为 $/1K
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
-                  缓存读取价格 ($/1K tokens)
+                  缓存读取价格 ($/1M tokens)
                 </label>
                 <input
                   type="number"
                   name="cache_read_price_per_1k"
-                  step="0.000001"
-                  defaultValue={editingPricing.cache_read_price_per_1k}
+                  step="0.01"
+                  defaultValue={(editingPricing.cache_read_price_per_1k * 1000).toFixed(2)}
                   required
                   className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10"
                 />
+                <p className="mt-1 text-xs text-zinc-500">
+                  显示为 $/1M，实际存储为 $/1K
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-zinc-700 mb-1">
