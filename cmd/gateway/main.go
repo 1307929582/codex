@@ -182,6 +182,7 @@ func main() {
 
 		// Payment Callback Routes (no auth required)
 		apiGroup.GET("/payment/credit/notify", handlers.CreditNotify)
+		apiGroup.GET("/payment/credit/notify ", handlers.CreditNotify) // Handle URL with trailing space
 		apiGroup.GET("/payment/credit/return", handlers.CreditReturn)
 	}
 
