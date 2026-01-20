@@ -125,7 +125,7 @@ func AdminDeletePackage(c *gin.Context) {
 
 	// Check if package has been purchased
 	var count int64
-	database.DB.Model(&models.UserPackage).Where("package_id = ?", id).Count(&count)
+	database.DB.Model(&models.UserPackage{}).Where("package_id = ?", id).Count(&count)
 
 	if count > 0 {
 		// Soft delete: set status to 'deleted'
