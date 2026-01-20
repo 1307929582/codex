@@ -23,6 +23,11 @@ export default function AdminSettings() {
     linuxdo_client_id: '',
     linuxdo_client_secret: '',
     linuxdo_enabled: false,
+    credit_enabled: false,
+    credit_pid: '',
+    credit_key: '',
+    credit_notify_url: '',
+    credit_return_url: '',
   });
 
   useEffect(() => {
@@ -35,6 +40,11 @@ export default function AdminSettings() {
         linuxdo_client_id: settings.linuxdo_client_id || '',
         linuxdo_client_secret: settings.linuxdo_client_secret || '',
         linuxdo_enabled: settings.linuxdo_enabled ?? false,
+        credit_enabled: settings.credit_enabled ?? false,
+        credit_pid: settings.credit_pid || '',
+        credit_key: settings.credit_key || '',
+        credit_notify_url: settings.credit_notify_url || '',
+        credit_return_url: settings.credit_return_url || '',
       });
     }
   }, [settings]);
@@ -193,6 +203,90 @@ export default function AdminSettings() {
               <code className="block mt-2 rounded bg-blue-100 px-2 py-1 text-xs font-mono text-blue-900">
                 https://codex.zenscaleai.com/api/auth/linuxdo/callback
               </code>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Credit Payment Configuration */}
+      <section className="grid gap-6 md:grid-cols-[200px_1fr] pt-6 border-t border-zinc-100">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900">Credit 支付</h2>
+          <p className="text-sm text-zinc-500">Linux Do Credit 支付配置</p>
+        </div>
+        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+            <div>
+              <label className="text-sm font-medium text-zinc-700">启用 Credit 支付</label>
+              <p className="text-xs text-zinc-500 mt-1">允许用户使用 Linux Do Credit 购买套餐</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, credit_enabled: !formData.credit_enabled })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.credit_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.credit_enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">PID (Client ID)</label>
+              <input
+                type="text"
+                value={formData.credit_pid}
+                onChange={(e) => setFormData({ ...formData, credit_pid: e.target.value })}
+                placeholder="001"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">Key (Client Secret)</label>
+              <input
+                type="password"
+                value={formData.credit_key}
+                onChange={(e) => setFormData({ ...formData, credit_key: e.target.value })}
+                placeholder="••••••••••••••••••••••••••••••••"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">Notify URL (异步通知地址)</label>
+              <input
+                type="text"
+                value={formData.credit_notify_url}
+                onChange={(e) => setFormData({ ...formData, credit_notify_url: e.target.value })}
+                placeholder="https://your-domain.com/api/payment/credit/notify"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">Return URL (同步返回地址)</label>
+              <input
+                type="text"
+                value={formData.credit_return_url}
+                onChange={(e) => setFormData({ ...formData, credit_return_url: e.target.value })}
+                placeholder="https://your-domain.com/packages"
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-mono outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+
+            <div className="rounded-lg bg-amber-50 p-4 text-sm text-amber-700">
+              <p className="font-medium mb-1">重要提示</p>
+              <ul className="text-xs space-y-1 list-disc list-inside">
+                <li>Notify URL 必须是外网可访问的 HTTPS 地址</li>
+                <li>在 Linux Do Credit 平台创建应用时，需要配置这些回调地址</li>
+                <li>PID 和 Key 请妥善保管，不要泄露</li>
+              </ul>
             </div>
           </div>
         </div>
