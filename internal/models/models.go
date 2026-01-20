@@ -91,9 +91,9 @@ type SystemSettings struct {
 	OpenAIBaseURL       string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
 
 	// LinuxDo OAuth Settings
-	LinuxDoClientID     string `gorm:"type:varchar(255)" json:"linuxdo_client_id"`
-	LinuxDoClientSecret string `gorm:"type:varchar(255)" json:"linuxdo_client_secret"`
-	LinuxDoEnabled      bool   `gorm:"default:false" json:"linuxdo_enabled"`
+	LinuxDoClientID     string `gorm:"column:linuxdo_client_id;type:varchar(255)" json:"linuxdo_client_id"`
+	LinuxDoClientSecret string `gorm:"column:linuxdo_client_secret;type:varchar(255)" json:"linuxdo_client_secret"`
+	LinuxDoEnabled      bool   `gorm:"column:linuxdo_enabled;default:false" json:"linuxdo_enabled"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
