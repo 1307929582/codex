@@ -137,15 +137,25 @@ func AdminGetOrderStats(c *gin.Context) {
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&stats.TotalRevenue)
 
-	// Today revenue
+	// Calculate today's date range in UTC
+	// This avoids using DATE() function in WHERE clause which prevents index usage
+	now := time.Now().UTC()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	// Today revenue (using UTC range for index efficiency)
 	database.DB.Model(&models.PaymentOrder{}).
-		Where("status = ? AND DATE(paid_at) = CURRENT_DATE", "paid").
+		Where("status = ? AND paid_at >= ? AND paid_at < ?", "paid", startOfDay, endOfDay).
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&stats.TodayRevenue)
 
-	// Month revenue
+	// Calculate month range in UTC
+	startOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	endOfMonth := startOfMonth.AddDate(0, 1, 0)
+
+	// Month revenue (using UTC range for index efficiency)
 	database.DB.Model(&models.PaymentOrder{}).
-		Where("status = ? AND DATE_TRUNC('month', paid_at) = DATE_TRUNC('month', CURRENT_DATE)", "paid").
+		Where("status = ? AND paid_at >= ? AND paid_at < ?", "paid", startOfMonth, endOfMonth).
 		Select("COALESCE(SUM(amount), 0)").
 		Scan(&stats.MonthRevenue)
 

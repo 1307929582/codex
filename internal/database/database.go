@@ -47,17 +47,24 @@ func Connect() error {
 	}
 
 	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool
-	sqlDB.SetMaxIdleConns(10)
+	// Increased from 10 to 25 to reduce connection churn under spiky workloads
+	sqlDB.SetMaxIdleConns(25)
 
 	// SetMaxOpenConns sets the maximum number of open connections to the database
-	// This allows up to 100 concurrent database operations
+	// This allows up to 100 concurrent database operations per backend instance
+	// Note: If running multiple backend replicas, ensure total connections < PostgreSQL max_connections
+	// Example: 3 replicas × 100 = 300 connections (PostgreSQL max_connections should be >= 350)
 	sqlDB.SetMaxOpenConns(100)
 
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused
 	// This helps prevent issues with stale connections
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
-	log.Println("Database connected successfully with connection pool configured")
+	// SetConnMaxIdleTime sets the maximum amount of time a connection may be idle
+	// Connections idle longer than this will be closed to free resources
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+
+	log.Println("Database connected successfully with optimized connection pool configured")
 	return nil
 }
 

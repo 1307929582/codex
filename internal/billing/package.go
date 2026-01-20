@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // DeductCost deducts cost from user's package quota or balance
@@ -29,21 +30,27 @@ func DeductCost(tx *gorm.DB, userID uuid.UUID, cost float64) error {
 
 	if err == nil {
 		// User has active package, try to use package quota first
-		var dailyUsage models.DailyUsage
-		err = tx.Where("user_id = ? AND date = ?", userID, today).First(&dailyUsage).Error
+		// Use upsert to handle concurrent inserts safely
+		dailyUsage := models.DailyUsage{
+			UserID:        userID,
+			UserPackageID: &activePackage.ID,
+			Date:          today,
+			UsedAmount:    0,
+		}
 
-		if err == gorm.ErrRecordNotFound {
-			// Create new daily usage record
-			dailyUsage = models.DailyUsage{
-				UserID:        userID,
-				UserPackageID: &activePackage.ID,
-				Date:          today,
-				UsedAmount:    0,
-			}
-			if err := tx.Create(&dailyUsage).Error; err != nil {
-				return fmt.Errorf("failed to create daily usage: %v", err)
-			}
-		} else if err != nil {
+		// Use ON CONFLICT to handle concurrent inserts
+		err = tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "user_id"}, {Name: "date"}},
+			DoNothing: true, // If exists, do nothing (we'll fetch it next)
+		}).Create(&dailyUsage).Error
+
+		if err != nil {
+			return fmt.Errorf("failed to upsert daily usage: %v", err)
+		}
+
+		// Fetch the record (either newly created or existing)
+		err = tx.Where("user_id = ? AND date = ?", userID, today).First(&dailyUsage).Error
+		if err != nil {
 			return fmt.Errorf("failed to get daily usage: %v", err)
 		}
 
@@ -65,14 +72,21 @@ func DeductCost(tx *gorm.DB, userID uuid.UUID, cost float64) error {
 			return nil
 		} else if remaining > 0 {
 			// Use remaining quota, then deduct from balance
+			// Use atomic update with condition to prevent concurrent over-use
 			result := tx.Model(&models.DailyUsage{}).
-				Where("id = ?", dailyUsage.ID).
-				Update("used_amount", activePackage.DailyLimit)
+				Where("id = ? AND used_amount + ? <= ?", dailyUsage.ID, remaining, activePackage.DailyLimit).
+				Update("used_amount", gorm.Expr("used_amount + ?", remaining))
 
 			if result.Error != nil {
 				return fmt.Errorf("failed to update daily usage: %v", result.Error)
 			}
-			cost -= remaining
+			if result.RowsAffected == 0 {
+				// Quota was consumed by concurrent request, fall back to balance only
+				// Don't return error, just use balance for full cost
+			} else {
+				// Successfully used remaining quota, reduce cost
+				cost -= remaining
+			}
 		}
 	}
 

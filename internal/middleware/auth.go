@@ -60,9 +60,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
+		// Update last_used_at asynchronously with throttling
+		// Use conditional update to prevent stampede writes
 		go func(keyID uint) {
 			now := time.Now()
-			database.DB.Model(&models.APIKey{}).Where("id = ?", keyID).Update("last_used_at", now)
+			// Conditional update: only update if last_used_at is NULL or older than 5 minutes
+			database.DB.Model(&models.APIKey{}).
+				Where("id = ? AND (last_used_at IS NULL OR last_used_at < ?)", keyID, now.Add(-5*time.Minute)).
+				Update("last_used_at", now)
 		}(dbKey.ID)
 
 		c.Set("user", dbKey.User)

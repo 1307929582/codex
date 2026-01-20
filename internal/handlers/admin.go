@@ -324,14 +324,21 @@ func AdminGetOverview(c *gin.Context) {
 	// Total API keys
 	database.DB.Model(&models.APIKey{}).Count(&stats.TotalAPIKeys)
 
-	// Today's requests (UTC+8 timezone)
+	// Calculate today's date range in UTC for Asia/Shanghai timezone
+	// This avoids using timezone functions in WHERE clause which prevents index usage
+	shanghaiTZ, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(shanghaiTZ)
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, shanghaiTZ).UTC()
+	endOfDay := startOfDay.Add(24 * time.Hour)
+
+	// Today's requests (using UTC range for index efficiency)
 	database.DB.Model(&models.UsageLog{}).
-		Where("(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai')::date = (NOW() AT TIME ZONE 'Asia/Shanghai')::date").
+		Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).
 		Count(&stats.TodayRequests)
 
-	// Today's revenue (UTC+8 timezone)
+	// Today's revenue (using UTC range for index efficiency)
 	database.DB.Model(&models.UsageLog{}).
-		Where("(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai')::date = (NOW() AT TIME ZONE 'Asia/Shanghai')::date").
+		Where("created_at >= ? AND created_at < ?", startOfDay, endOfDay).
 		Select("COALESCE(SUM(cost), 0)").
 		Scan(&stats.TodayRevenue)
 
@@ -347,10 +354,17 @@ func AdminGetUsageChart(c *gin.Context) {
 
 	var hourlyData []HourlyUsage
 
-	// Get hourly usage for the last 24 hours in Asia/Shanghai timezone
+	// Calculate 24 hours ago in UTC for Asia/Shanghai timezone
+	// This avoids using timezone functions in WHERE clause which prevents index usage
+	shanghaiTZ, _ := time.LoadLocation("Asia/Shanghai")
+	now := time.Now().In(shanghaiTZ)
+	twentyFourHoursAgo := now.Add(-24 * time.Hour).UTC()
+
+	// Get hourly usage for the last 24 hours
+	// Note: We still use timezone conversion in SELECT for display purposes only
 	database.DB.Model(&models.UsageLog{}).
 		Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00') as hour, COALESCE(SUM(cost), 0) as cost").
-		Where("created_at >= (NOW() AT TIME ZONE 'Asia/Shanghai' - INTERVAL '24 hours') AT TIME ZONE 'Asia/Shanghai' AT TIME ZONE 'UTC'").
+		Where("created_at >= ?", twentyFourHoursAgo).
 		Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00')").
 		Order("hour").
 		Scan(&hourlyData)
