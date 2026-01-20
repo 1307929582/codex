@@ -75,7 +75,7 @@ export default function AdminLayout({
         <div className="flex h-16 items-center px-6 border-b border-zinc-100">
           <div className="flex items-center gap-2 font-bold text-zinc-900">
             <div className="h-6 w-6 rounded-md bg-zinc-900" />
-            <span>管理员面板</span>
+            <span>Zenscale Codex</span>
           </div>
         </div>
 

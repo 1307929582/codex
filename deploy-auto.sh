@@ -9,7 +9,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo "================================"
-echo "  Codex Gateway 一键部署"
+echo "  Zenscale Codex 一键部署"
 echo "================================"
 echo ""
 

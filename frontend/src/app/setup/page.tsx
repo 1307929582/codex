@@ -117,7 +117,7 @@ export default function SetupWizard() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900">
-            欢迎使用 Codex Gateway
+            欢迎使用 Zenscale Codex
           </h1>
           <p className="mt-2 text-gray-600">
             首次安装向导 - 第 {step} / 3 步
@@ -287,7 +287,7 @@ export default function SetupWizard() {
                   }
                   className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
                   rows={3}
-                  placeholder="欢迎使用Codex Gateway..."
+                  placeholder="欢迎使用 Zenscale Codex..."
                 />
               </div>
 

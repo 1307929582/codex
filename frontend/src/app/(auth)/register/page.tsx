@@ -50,7 +50,7 @@ export default function RegisterPage() {
       <Card className="w-[400px]">
         <CardHeader>
           <CardTitle className="text-center text-2xl">创建账户</CardTitle>
-          <p className="text-center text-sm text-muted-foreground">注册 Codex Gateway</p>
+          <p className="text-center text-sm text-muted-foreground">注册 Zenscale Codex</p>
         </CardHeader>
         <CardContent>
           {success ? (

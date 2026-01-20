@@ -56,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen">
       <aside className="w-64 border-r bg-gray-50/40 hidden md:block">
         <div className="flex h-16 items-center border-b px-6 font-bold text-lg">
-          Codex Gateway
+          Zenscale Codex
         </div>
         <nav className="p-4 space-y-2">
           {navItems.map((item) => {
@@ -89,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
       <main className="flex-1 overflow-y-auto">
         <header className="flex h-16 items-center border-b px-6 md:hidden">
-          <span className="font-bold">Codex Gateway</span>
+          <span className="font-bold">Zenscale Codex</span>
         </header>
         <div className="p-8">
           {children}

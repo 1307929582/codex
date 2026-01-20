@@ -52,7 +52,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-[400px]">
         <CardHeader>
-          <CardTitle className="text-center text-2xl">Codex Gateway</CardTitle>
+          <CardTitle className="text-center text-2xl">Zenscale Codex</CardTitle>
           <p className="text-center text-sm text-muted-foreground">登录您的账户</p>
         </CardHeader>
         <CardContent>

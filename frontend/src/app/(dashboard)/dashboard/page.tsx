@@ -47,7 +47,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">控制台</h2>
-        <p className="text-muted-foreground">欢迎使用 Codex Gateway</p>
+        <p className="text-muted-foreground">欢迎使用 Zenscale Codex</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

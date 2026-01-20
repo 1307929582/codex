@@ -1,6 +1,6 @@
-# Codex Gateway
+# Zenscale Codex
 
-商业级OpenAI API网关，支持多用户、计费、管理员面板等企业级功能。
+商业级 OpenAI API 网关，支持多用户、计费、管理员面板等企业级功能。
 
 ## ✨ 最新版本
 

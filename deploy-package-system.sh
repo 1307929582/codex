@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Codex Gateway - 套餐+支付系统部署脚本 ==="
+echo "=== Zenscale Codex - 套餐+支付系统部署脚本 ==="
 echo ""
 echo "此脚本将部署完整的套餐购买和Credit支付系统"
 echo ""
