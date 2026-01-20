@@ -78,10 +78,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="absolute bottom-4 left-4 right-4">
           {user && (
             <div className="mb-2 px-3 py-2 text-sm text-muted-foreground truncate">
-              {user.email}
+              {user.username || user.email}
             </div>
           )}
-          <Button variant="outline" className="justify-start" onClick={handleLogout}>
+          <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> 退出登录
           </Button>
         </div>

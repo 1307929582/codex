@@ -1,6 +1,9 @@
 export interface User {
   id: string;
   email: string;
+  username?: string;
+  avatar_url?: string;
+  oauth_provider?: string;
   balance: number;
   status: string;
   role: string; // user, admin, super_admin
