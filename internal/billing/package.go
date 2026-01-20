@@ -51,35 +51,38 @@ func DeductCost(tx *gorm.DB, userID uuid.UUID, cost float64) error {
 		remaining := activePackage.DailyLimit - dailyUsage.UsedAmount
 
 		if remaining >= cost {
-			// Package quota is enough
-			dailyUsage.UsedAmount += cost
-			if err := tx.Save(&dailyUsage).Error; err != nil {
-				return fmt.Errorf("failed to update daily usage: %v", err)
+			// Package quota is enough - use atomic update
+			result := tx.Model(&models.DailyUsage{}).
+				Where("id = ? AND used_amount + ? <= ?", dailyUsage.ID, cost, activePackage.DailyLimit).
+				Update("used_amount", gorm.Expr("used_amount + ?", cost))
+
+			if result.Error != nil {
+				return fmt.Errorf("failed to update daily usage: %v", result.Error)
+			}
+			if result.RowsAffected == 0 {
+				return fmt.Errorf("concurrent update conflict or quota exceeded")
 			}
 			return nil
 		} else if remaining > 0 {
 			// Use remaining quota, then deduct from balance
-			dailyUsage.UsedAmount = activePackage.DailyLimit
-			if err := tx.Save(&dailyUsage).Error; err != nil {
-				return fmt.Errorf("failed to update daily usage: %v", err)
+			result := tx.Model(&models.DailyUsage{}).
+				Where("id = ?", dailyUsage.ID).
+				Update("used_amount", activePackage.DailyLimit)
+
+			if result.Error != nil {
+				return fmt.Errorf("failed to update daily usage: %v", result.Error)
 			}
 			cost -= remaining
 		}
 	}
 
-	// Deduct from balance
-	var user models.User
-	if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
-		return fmt.Errorf("user not found: %v", err)
+	// Deduct from balance using atomic operation
+	result := tx.Exec("UPDATE users SET balance = balance - ? WHERE id = ? AND balance >= ?", cost, userID, cost)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update balance: %v", result.Error)
 	}
-
-	if user.Balance < cost {
+	if result.RowsAffected == 0 {
 		return fmt.Errorf("insufficient balance")
-	}
-
-	user.Balance -= cost
-	if err := tx.Save(&user).Error; err != nil {
-		return fmt.Errorf("failed to update balance: %v", err)
 	}
 
 	return nil

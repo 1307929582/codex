@@ -111,6 +111,7 @@ func CreditNotify(c *gin.Context) {
 
 	expectedSign := generateCreditSign(params, settings.CreditKey)
 	if sign != expectedSign {
+		log.Printf("[Payment] Invalid signature from IP: %s", c.ClientIP())
 		c.String(http.StatusBadRequest, "invalid signature")
 		return
 	}
@@ -124,16 +125,32 @@ func CreditNotify(c *gin.Context) {
 	outTradeNo := params["out_trade_no"]
 	tradeNo := params["trade_no"]
 
+	// Validate trade_no is not empty
+	if tradeNo == "" {
+		log.Printf("[Payment] Empty trade_no from IP: %s", c.ClientIP())
+		c.String(http.StatusBadRequest, "invalid trade_no")
+		return
+	}
+
 	// Find order
 	var order models.PaymentOrder
 	if err := database.DB.Where("order_no = ?", outTradeNo).First(&order).Error; err != nil {
+		log.Printf("[Payment] Order not found: %s from IP: %s", outTradeNo, c.ClientIP())
 		c.String(http.StatusNotFound, "order not found")
 		return
 	}
 
-	// Check if already processed
+	// Check if already processed (idempotency)
 	if order.Status == "paid" {
+		log.Printf("[Payment] Order already paid: %s", outTradeNo)
 		c.String(http.StatusOK, "success")
+		return
+	}
+
+	// Check if order is too old (prevent replay attacks)
+	if time.Since(order.CreatedAt) > 24*time.Hour {
+		log.Printf("[Payment] Order too old: %s, created at: %s", outTradeNo, order.CreatedAt)
+		c.String(http.StatusBadRequest, "order expired")
 		return
 	}
 
