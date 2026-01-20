@@ -68,13 +68,49 @@ export default function AdminUserDetailPage() {
             <h2 className="mb-4 text-xl font-bold text-gray-900">基本信息</h2>
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
+                <dt className="text-sm font-medium text-gray-500">用户ID</dt>
+                <dd className="mt-1 text-sm text-gray-900 font-mono">{data.user.id}</dd>
+              </div>
+              <div>
                 <dt className="text-sm font-medium text-gray-500">邮箱</dt>
                 <dd className="mt-1 text-sm text-gray-900">{data.user.email}</dd>
               </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">用户ID</dt>
-                <dd className="mt-1 text-sm text-gray-900">{data.user.id}</dd>
-              </div>
+              {data.user.username && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">用户名</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{data.user.username}</dd>
+                </div>
+              )}
+              {data.user.oauth_provider && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">登录方式</dt>
+                  <dd className="mt-1">
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                      {data.user.oauth_provider === 'linuxdo' ? 'LinuxDo' : data.user.oauth_provider}
+                    </span>
+                  </dd>
+                </div>
+              )}
+              {data.user.oauth_id && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    {data.user.oauth_provider === 'linuxdo' ? 'LinuxDo ID' : 'OAuth ID'}
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-900 font-mono">{data.user.oauth_id}</dd>
+                </div>
+              )}
+              {data.user.avatar_url && (
+                <div className="sm:col-span-2">
+                  <dt className="text-sm font-medium text-gray-500">头像</dt>
+                  <dd className="mt-2">
+                    <img
+                      src={data.user.avatar_url}
+                      alt="用户头像"
+                      className="h-16 w-16 rounded-full border-2 border-gray-200"
+                    />
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt className="text-sm font-medium text-gray-500">状态</dt>
                 <dd className="mt-1">
@@ -95,7 +131,7 @@ export default function AdminUserDetailPage() {
                   {data.user.role === 'admin' ? '管理员' : '用户'}
                 </dd>
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <dt className="text-sm font-medium text-gray-500">注册时间</dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   {new Date(data.user.created_at).toLocaleString('zh-CN')}
