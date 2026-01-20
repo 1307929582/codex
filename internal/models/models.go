@@ -95,8 +95,75 @@ type SystemSettings struct {
 	LinuxDoClientSecret string `gorm:"column:linuxdo_client_secret;type:varchar(255)" json:"linuxdo_client_secret"`
 	LinuxDoEnabled      bool   `gorm:"column:linuxdo_enabled;default:false" json:"linuxdo_enabled"`
 
+	// Credit Payment Settings
+	CreditEnabled   bool   `gorm:"column:credit_enabled;default:false" json:"credit_enabled"`
+	CreditPID       string `gorm:"column:credit_pid;type:varchar(255)" json:"credit_pid"`
+	CreditKey       string `gorm:"column:credit_key;type:varchar(255)" json:"credit_key"`
+	CreditNotifyURL string `gorm:"column:credit_notify_url;type:varchar(500)" json:"credit_notify_url"`
+	CreditReturnURL string `gorm:"column:credit_return_url;type:varchar(500)" json:"credit_return_url"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Package struct {
+	ID           uint      `gorm:"primaryKey" json:"id"`
+	Name         string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description  string    `gorm:"type:text" json:"description"`
+	Price        float64   `gorm:"type:decimal(18,6);not null" json:"price"`
+	DurationDays int       `gorm:"not null" json:"duration_days"`
+	DailyLimit   float64   `gorm:"type:decimal(18,6);not null" json:"daily_limit"`
+	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	SortOrder    int       `gorm:"default:0" json:"sort_order"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type UserPackage struct {
+	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID       uuid.UUID `gorm:"type:uuid;not null;index" json:"user_id"`
+	User         User      `gorm:"foreignKey:UserID" json:"-"`
+	PackageID    uint      `gorm:"not null" json:"package_id"`
+	Package      Package   `gorm:"foreignKey:PackageID" json:"-"`
+	PackageName  string    `gorm:"type:varchar(100);not null" json:"package_name"`
+	PackagePrice float64   `gorm:"type:decimal(18,6);not null" json:"package_price"`
+	DurationDays int       `gorm:"not null" json:"duration_days"`
+	DailyLimit   float64   `gorm:"type:decimal(18,6);not null" json:"daily_limit"`
+	StartDate    time.Time `gorm:"type:date;not null" json:"start_date"`
+	EndDate      time.Time `gorm:"type:date;not null" json:"end_date"`
+	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type DailyUsage struct {
+	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID        uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	User          User       `gorm:"foreignKey:UserID" json:"-"`
+	UserPackageID *uuid.UUID `gorm:"type:uuid" json:"user_package_id"`
+	Date          time.Time  `gorm:"type:date;not null" json:"date"`
+	UsedAmount    float64    `gorm:"type:decimal(18,6);default:0" json:"used_amount"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+}
+
+type PaymentOrder struct {
+	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID        uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	User          User       `gorm:"foreignKey:UserID" json:"-"`
+	PackageID     *uint      `json:"package_id"`
+	Package       *Package   `gorm:"foreignKey:PackageID" json:"-"`
+	OrderNo       string     `gorm:"type:varchar(64);uniqueIndex;not null" json:"order_no"`
+	OutTradeNo    string     `gorm:"type:varchar(64)" json:"out_trade_no"`
+	TradeNo       string     `gorm:"type:varchar(64)" json:"trade_no"`
+	Amount        float64    `gorm:"type:decimal(18,6);not null" json:"amount"`
+	Status        string     `gorm:"type:varchar(20);default:'pending'" json:"status"`
+	PaymentMethod string     `gorm:"type:varchar(50);default:'credit'" json:"payment_method"`
+	PaymentData   string     `gorm:"type:text" json:"payment_data"`
+	NotifyData    string     `gorm:"type:text" json:"notify_data"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
+	PaidAt        *time.Time `json:"paid_at"`
 }
 
 type AdminLog struct {
