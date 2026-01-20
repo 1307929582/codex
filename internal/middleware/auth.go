@@ -46,9 +46,18 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if dbKey.User.Balance <= 0 {
-			c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance"})
-			c.Abort()
-			return
+			// Check for active package
+			today := database.GetToday()
+			var activePackage models.UserPackage
+			hasActivePackage := database.DB.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
+				dbKey.User.ID, "active", today, today).
+				First(&activePackage).Error == nil
+
+			if !hasActivePackage {
+				c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance or active package"})
+				c.Abort()
+				return
+			}
 		}
 
 		go func(keyID uint) {
