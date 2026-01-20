@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {user.username || user.email}
             </div>
           )}
-          <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
+          <Button variant="outline" className="justify-start" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" /> 退出登录
           </Button>
         </div>
