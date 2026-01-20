@@ -13,7 +13,7 @@ import (
 // AdminListPackages lists all packages
 func AdminListPackages(c *gin.Context) {
 	var packages []models.Package
-	if err := database.DB.Order("sort_order ASC, id ASC").Find(&packages).Error; err != nil {
+	if err := database.DB.Where("status != ?", "deleted").Order("sort_order ASC, id ASC").Find(&packages).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch packages"})
 		return
 	}
@@ -113,7 +113,7 @@ func AdminUpdatePackage(c *gin.Context) {
 	c.JSON(http.StatusOK, pkg)
 }
 
-// AdminDeletePackage deletes a package
+// AdminDeletePackage deletes a package (soft delete)
 func AdminDeletePackage(c *gin.Context) {
 	id := c.Param("id")
 
@@ -123,12 +123,26 @@ func AdminDeletePackage(c *gin.Context) {
 		return
 	}
 
-	if err := database.DB.Delete(&pkg).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete package"})
-		return
-	}
+	// Check if package has been purchased
+	var count int64
+	database.DB.Model(&models.UserPackage).Where("package_id = ?", id).Count(&count)
 
-	c.JSON(http.StatusOK, gin.H{"message": "package deleted"})
+	if count > 0 {
+		// Soft delete: set status to 'deleted'
+		pkg.Status = "deleted"
+		if err := database.DB.Save(&pkg).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete package"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "package deleted (soft delete due to existing purchases)"})
+	} else {
+		// Hard delete: no purchases exist
+		if err := database.DB.Delete(&pkg).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete package"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "package deleted"})
+	}
 }
 
 // AdminUpdatePackageStatus updates package status
