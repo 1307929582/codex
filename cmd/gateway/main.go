@@ -156,6 +156,11 @@ func main() {
 			admin.DELETE("/packages/:id", handlers.AdminDeletePackage)
 			admin.PUT("/packages/:id/status", handlers.AdminUpdatePackageStatus)
 
+			// Order Management
+			admin.GET("/orders", handlers.AdminListOrders)
+			admin.GET("/orders/stats", handlers.AdminGetOrderStats)
+			admin.GET("/user-packages", handlers.AdminListUserPackages)
+
 			// Codex Upstream Management
 			admin.GET("/codex/upstreams", handlers.AdminListCodexUpstreams)
 			admin.GET("/codex/upstreams/:id", handlers.AdminGetCodexUpstream)
