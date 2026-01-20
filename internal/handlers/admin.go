@@ -270,7 +270,8 @@ func AdminUpdateSettings(c *gin.Context) {
 			}
 		} else {
 			// Update existing settings
-			if err := tx.Model(&settings).Updates(req).Error; err != nil {
+			// Use Select to update all fields including zero values (false for booleans)
+			if err := tx.Model(&settings).Select("*").Updates(req).Error; err != nil {
 				return err
 			}
 		}
