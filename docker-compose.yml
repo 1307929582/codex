@@ -26,6 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: codex-backend
+    hostname: backend
     environment:
       SERVER_PORT: 12322
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -44,6 +45,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:12322/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   frontend:
@@ -61,7 +68,8 @@ services:
     networks:
       - codex-network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 networks:
