@@ -125,13 +125,12 @@ func LinuxDoCallback(c *gin.Context) {
 }
 
 func getLinuxDoUserInfo(accessToken string) (*LinuxDoUserInfo, error) {
-	req, err := http.NewRequest("GET", "https://linux.do/api/user", nil)
+	req, err := http.NewRequest("GET", "https://connect.linux.do/api/user", nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("User-Api-Key", accessToken)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
