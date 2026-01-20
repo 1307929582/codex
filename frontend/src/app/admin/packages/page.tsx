@@ -52,6 +52,10 @@ export default function AdminPackagesPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    const stockValue = formData.get('stock') as string;
+    const parsedStock = parseInt(stockValue);
+
     const data = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
@@ -59,7 +63,7 @@ export default function AdminPackagesPage() {
       duration_days: parseInt(formData.get('duration_days') as string),
       daily_limit: parseFloat(formData.get('daily_limit') as string),
       sort_order: parseInt(formData.get('sort_order') as string) || 0,
-      stock: parseInt(formData.get('stock') as string) || -1,
+      stock: isNaN(parsedStock) ? -1 : parsedStock,
     };
 
     if (editingPackage) {
