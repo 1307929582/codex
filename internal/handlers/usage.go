@@ -63,7 +63,7 @@ func GetUsageStats(c *gin.Context) {
 
 	database.DB.Model(&models.UsageLog{}).Where("user_id = ? AND created_at >= ?", user.ID, sevenDaysAgo).Select("COALESCE(SUM(cost), 0)").Scan(&sevenDaysCost)
 	database.DB.Model(&models.UsageLog{}).Where("user_id = ? AND created_at >= ?", user.ID, sevenDaysAgo).Count(&sevenDaysRequests)
-	database.DB.Model(&models.UsageLog).Where("user_id = ? AND created_at >= ?", user.ID, sevenDaysAgo).Select("COALESCE(SUM(total_tokens), 0)").Scan(&sevenDaysTokens)
+	database.DB.Model(&models.UsageLog{}).Where("user_id = ? AND created_at >= ?", user.ID, sevenDaysAgo).Select("COALESCE(SUM(total_tokens), 0)").Scan(&sevenDaysTokens)
 
 	c.JSON(http.StatusOK, gin.H{
 		"today_cost":          todayCost,
