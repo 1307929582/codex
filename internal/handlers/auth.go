@@ -24,6 +24,15 @@ type LoginRequest struct {
 }
 
 func Register(c *gin.Context) {
+	// Check if email registration is enabled
+	var settings models.SystemSettings
+	if err := database.DB.First(&settings).Error; err == nil {
+		if !settings.EmailRegistrationEnabled {
+			c.JSON(http.StatusForbidden, gin.H{"error": "email registration is currently disabled"})
+			return
+		}
+	}
+
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

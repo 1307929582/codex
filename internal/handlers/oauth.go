@@ -155,7 +155,7 @@ func getLinuxDoUserInfo(accessToken string) (*LinuxDoUserInfo, error) {
 func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 	var user models.User
 
-	// Get default balance from settings
+	// Get settings
 	var settings models.SystemSettings
 	database.DB.First(&settings)
 	defaultBalance := settings.DefaultBalance
@@ -178,6 +178,11 @@ func findOrCreateLinuxDoUser(userInfo *LinuxDoUserInfo) (*models.User, error) {
 		}
 		database.DB.Save(&user)
 		return &user, nil
+	}
+
+	// Check if LinuxDo registration is enabled for new users
+	if !settings.LinuxDoRegistrationEnabled {
+		return nil, fmt.Errorf("LinuxDo registration is currently disabled")
 	}
 
 	// Try to find by email (for account linking)

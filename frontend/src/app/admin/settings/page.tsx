@@ -19,7 +19,8 @@ export default function AdminSettings() {
     announcement: '',
     default_balance: 0,
     min_recharge_amount: 10,
-    registration_enabled: true,
+    email_registration_enabled: true,
+    linuxdo_registration_enabled: true,
     linuxdo_client_id: '',
     linuxdo_client_secret: '',
     linuxdo_enabled: false,
@@ -36,7 +37,8 @@ export default function AdminSettings() {
         announcement: settings.announcement || '',
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
-        registration_enabled: settings.registration_enabled ?? true,
+        email_registration_enabled: settings.email_registration_enabled ?? true,
+        linuxdo_registration_enabled: settings.linuxdo_registration_enabled ?? true,
         linuxdo_client_id: settings.linuxdo_client_id || '',
         linuxdo_client_secret: settings.linuxdo_client_secret || '',
         linuxdo_enabled: settings.linuxdo_enabled ?? false,
@@ -129,17 +131,34 @@ export default function AdminSettings() {
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <label className="text-sm font-medium text-zinc-700">允许新用户注册</label>
+            <label className="text-sm font-medium text-zinc-700">允许邮箱注册</label>
              <button
               type="button"
-              onClick={() => setFormData({ ...formData, registration_enabled: !formData.registration_enabled })}
+              onClick={() => setFormData({ ...formData, email_registration_enabled: !formData.email_registration_enabled })}
               className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                formData.registration_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+                formData.email_registration_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
               }`}
             >
               <span
                 className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  formData.registration_enabled ? 'translate-x-5' : 'translate-x-0'
+                  formData.email_registration_enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <label className="text-sm font-medium text-zinc-700">允许 LinuxDo 注册</label>
+             <button
+              type="button"
+              onClick={() => setFormData({ ...formData, linuxdo_registration_enabled: !formData.linuxdo_registration_enabled })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.linuxdo_registration_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.linuxdo_registration_enabled ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>

@@ -82,13 +82,14 @@ type Transaction struct {
 }
 
 type SystemSettings struct {
-	ID                  uint      `gorm:"primaryKey" json:"id"`
-	Announcement        string    `gorm:"type:text" json:"announcement"`
-	DefaultBalance      float64   `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
-	MinRechargeAmount   float64   `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
-	RegistrationEnabled bool      `gorm:"default:true" json:"registration_enabled"`
-	OpenAIAPIKey        string    `gorm:"type:varchar(255)" json:"openai_api_key"`
-	OpenAIBaseURL       string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
+	ID                         uint      `gorm:"primaryKey" json:"id"`
+	Announcement               string    `gorm:"type:text" json:"announcement"`
+	DefaultBalance             float64   `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
+	MinRechargeAmount          float64   `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
+	EmailRegistrationEnabled   bool      `gorm:"default:true" json:"email_registration_enabled"`
+	LinuxDoRegistrationEnabled bool      `gorm:"default:true" json:"linuxdo_registration_enabled"`
+	OpenAIAPIKey               string    `gorm:"type:varchar(255)" json:"openai_api_key"`
+	OpenAIBaseURL              string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
 
 	// LinuxDo OAuth Settings
 	LinuxDoClientID     string `gorm:"column:linuxdo_client_id;type:varchar(255)" json:"linuxdo_client_id"`
