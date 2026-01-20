@@ -16,14 +16,7 @@ export default function AdminDashboard() {
 
   const { data: chartData } = useQuery({
     queryKey: ['admin', 'usage-chart', timeRange],
-    queryFn: async () => {
-      const response = await fetch(`/api/admin/stats/usage-chart?range=${timeRange}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      return response.json();
-    },
+    queryFn: () => adminApi.getUsageChart(timeRange),
   });
 
   if (isLoading) return <DashboardSkeleton />;

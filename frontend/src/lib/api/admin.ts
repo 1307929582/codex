@@ -70,8 +70,10 @@ export const adminApi = {
     return response.data;
   },
 
-  getUsageChart: async () => {
-    const response = await api.get<HourlyUsage[]>('/api/admin/stats/usage-chart');
+  getUsageChart: async (range: '24h' | '7d' | '30d' = '24h') => {
+    const response = await api.get<Array<{ label: string; cost: number }>>('/api/admin/stats/usage-chart', {
+      params: { range },
+    });
     return response.data;
   },
 
