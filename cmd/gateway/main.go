@@ -184,6 +184,9 @@ func main() {
 			user.POST("/packages/:id/purchase", handlers.PurchasePackage)
 			user.GET("/user/packages", handlers.GetUserPackages)
 			user.GET("/user/daily-usage", handlers.GetUserDailyUsage)
+
+			// Recharge Routes
+			user.POST("/recharge", handlers.CreateRechargeOrder)
 		}
 
 		// Payment Callback Routes (no auth required)

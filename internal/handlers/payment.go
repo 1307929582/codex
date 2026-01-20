@@ -174,63 +174,96 @@ func CreditNotify(c *gin.Context) {
 			return err
 		}
 
-		// Get package info
-		var pkg models.Package
-		if err := tx.First(&pkg, order.PackageID).Error; err != nil {
-			return err
-		}
-
-		// Check and decrement stock (atomic operation)
-		if pkg.Stock != -1 {
-			result := tx.Model(&models.Package{}).
-				Where("id = ? AND (stock = -1 OR stock > 0)", pkg.ID).
-				Updates(map[string]interface{}{
-					"stock":      gorm.Expr("CASE WHEN stock = -1 THEN -1 ELSE stock - 1 END"),
-					"sold_count": gorm.Expr("sold_count + 1"),
-				})
+		// Check if this is a recharge order (no package) or package purchase
+		if order.PackageID == nil {
+			// This is a balance recharge order
+			// Add balance to user account
+			result := tx.Model(&models.User{}).
+				Where("id = ?", order.UserID).
+				Update("balance", gorm.Expr("balance + ?", order.Amount))
 
 			if result.Error != nil {
-				return fmt.Errorf("failed to update stock: %v", result.Error)
+				return fmt.Errorf("failed to update balance: %v", result.Error)
 			}
 			if result.RowsAffected == 0 {
-				return fmt.Errorf("package is out of stock")
+				return fmt.Errorf("user not found")
 			}
+
+			// Create transaction record
+			transaction := models.Transaction{
+				UserID:      order.UserID,
+				Amount:      order.Amount,
+				Type:        "deposit",
+				Description: fmt.Sprintf("余额充值 $%.2f", order.Amount),
+			}
+
+			if err := tx.Create(&transaction).Error; err != nil {
+				return err
+			}
+
+			log.Printf("[Payment] Balance recharged: user=%s, amount=%.2f, order=%s", order.UserID, order.Amount, order.OrderNo)
 		} else {
-			// Unlimited stock, just increment sold count
-			tx.Model(&models.Package{}).Where("id = ?", pkg.ID).
-				Update("sold_count", gorm.Expr("sold_count + 1"))
-		}
+			// This is a package purchase order
+			// Get package info
+			var pkg models.Package
+			if err := tx.First(&pkg, order.PackageID).Error; err != nil {
+				return err
+			}
 
-		// Create user package
-		startDate := time.Now().In(database.AsiaShanghai)
-		endDate := startDate.AddDate(0, 0, pkg.DurationDays)
+			// Check and decrement stock (atomic operation)
+			if pkg.Stock != -1 {
+				result := tx.Model(&models.Package{}).
+					Where("id = ? AND (stock = -1 OR stock > 0)", pkg.ID).
+					Updates(map[string]interface{}{
+						"stock":      gorm.Expr("CASE WHEN stock = -1 THEN -1 ELSE stock - 1 END"),
+						"sold_count": gorm.Expr("sold_count + 1"),
+					})
 
-		userPackage := models.UserPackage{
-			UserID:       order.UserID,
-			PackageID:    pkg.ID,
-			PackageName:  pkg.Name,
-			PackagePrice: pkg.Price,
-			DurationDays: pkg.DurationDays,
-			DailyLimit:   pkg.DailyLimit,
-			StartDate:    startDate,
-			EndDate:      endDate,
-			Status:       "active",
-		}
+				if result.Error != nil {
+					return fmt.Errorf("failed to update stock: %v", result.Error)
+				}
+				if result.RowsAffected == 0 {
+					return fmt.Errorf("package is out of stock")
+				}
+			} else {
+				// Unlimited stock, just increment sold count
+				tx.Model(&models.Package{}).Where("id = ?", pkg.ID).
+					Update("sold_count", gorm.Expr("sold_count + 1"))
+			}
 
-		if err := tx.Create(&userPackage).Error; err != nil {
-			return err
-		}
+			// Create user package
+			startDate := time.Now().In(database.AsiaShanghai)
+			endDate := startDate.AddDate(0, 0, pkg.DurationDays)
 
-		// Create transaction record
-		transaction := models.Transaction{
-			UserID:      order.UserID,
-			Amount:      pkg.Price,
-			Type:        "package_purchase",
-			Description: fmt.Sprintf("购买套餐: %s", pkg.Name),
-		}
+			userPackage := models.UserPackage{
+				UserID:       order.UserID,
+				PackageID:    pkg.ID,
+				PackageName:  pkg.Name,
+				PackagePrice: pkg.Price,
+				DurationDays: pkg.DurationDays,
+				DailyLimit:   pkg.DailyLimit,
+				StartDate:    startDate,
+				EndDate:      endDate,
+				Status:       "active",
+			}
 
-		if err := tx.Create(&transaction).Error; err != nil {
-			return err
+			if err := tx.Create(&userPackage).Error; err != nil {
+				return err
+			}
+
+			// Create transaction record
+			transaction := models.Transaction{
+				UserID:      order.UserID,
+				Amount:      pkg.Price,
+				Type:        "package_purchase",
+				Description: fmt.Sprintf("购买套餐: %s", pkg.Name),
+			}
+
+			if err := tx.Create(&transaction).Error; err != nil {
+				return err
+			}
+
+			log.Printf("[Payment] Package purchased: user=%s, package=%s, order=%s", order.UserID, pkg.Name, order.OrderNo)
 		}
 
 		return nil
@@ -250,15 +283,103 @@ func CreditReturn(c *gin.Context) {
 
 	var order models.PaymentOrder
 	if err := database.DB.Where("order_no = ?", orderNo).First(&order).Error; err != nil {
-		c.Redirect(http.StatusFound, "/packages?error=order_not_found")
+		// Redirect to account page for recharge orders, packages page for package orders
+		c.Redirect(http.StatusFound, "/account?error=order_not_found")
 		return
 	}
 
 	if order.Status == "paid" {
-		c.Redirect(http.StatusFound, "/packages?success=true")
+		// Redirect based on order type
+		if order.PackageID == nil {
+			// Recharge order - redirect to account page
+			c.Redirect(http.StatusFound, "/account?success=recharge_success")
+		} else {
+			// Package order - redirect to packages page
+			c.Redirect(http.StatusFound, "/packages?success=true")
+		}
 	} else {
-		c.Redirect(http.StatusFound, "/packages?error=payment_failed")
+		// Redirect based on order type
+		if order.PackageID == nil {
+			c.Redirect(http.StatusFound, "/account?error=payment_failed")
+		} else {
+			c.Redirect(http.StatusFound, "/packages?error=payment_failed")
+		}
 	}
+}
+
+// CreateRechargeOrder creates a payment order for balance recharge
+func CreateRechargeOrder(c *gin.Context) {
+	user := c.MustGet("user").(models.User)
+
+	var req struct {
+		Amount float64 `json:"amount" binding:"required,gt=0"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	// Get system settings for Credit config and min recharge amount
+	var settings models.SystemSettings
+	if err := database.DB.First(&settings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load settings"})
+		return
+	}
+
+	if !settings.CreditEnabled {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "payment is not enabled"})
+		return
+	}
+
+	// Check minimum recharge amount
+	if req.Amount < settings.MinRechargeAmount {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("minimum recharge amount is $%.2f", settings.MinRechargeAmount),
+		})
+		return
+	}
+
+	// Create payment order
+	orderNo := fmt.Sprintf("RCH%d%s", time.Now().Unix(), uuid.New().String()[:8])
+	order := models.PaymentOrder{
+		UserID:        user.ID,
+		PackageID:     nil, // No package for recharge
+		OrderNo:       orderNo,
+		Amount:        req.Amount,
+		Status:        "pending",
+		PaymentMethod: "credit",
+	}
+
+	if err := database.DB.Create(&order).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})
+		return
+	}
+
+	// Generate Credit payment URL
+	params := map[string]string{
+		"pid":          settings.CreditPID,
+		"type":         "epay",
+		"out_trade_no": orderNo,
+		"name":         fmt.Sprintf("余额充值 $%.2f", req.Amount),
+		"money":        fmt.Sprintf("%.2f", req.Amount),
+		"notify_url":   settings.CreditNotifyURL,
+		"return_url":   settings.CreditReturnURL,
+	}
+
+	sign := generateCreditSign(params, settings.CreditKey)
+	params["sign"] = sign
+	params["sign_type"] = "MD5"
+
+	// Build payment URL
+	paymentURL := "https://credit.linux.do/epay/pay/submit.php"
+
+	c.JSON(http.StatusOK, gin.H{
+		"order_no":    orderNo,
+		"amount":      req.Amount,
+		"payment_url": paymentURL,
+		"params":      params,
+	})
 }
 
 // generateCreditSign generates MD5 signature for Credit payment
