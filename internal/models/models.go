@@ -147,6 +147,10 @@ type DailyUsage struct {
 	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
+func (DailyUsage) TableName() string {
+	return "daily_usage"
+}
+
 type PaymentOrder struct {
 	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	UserID        uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
