@@ -57,8 +57,14 @@ export default function AdminSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] });
       setTimeout(() => setIsSaving(false), 500);
+      alert('设置保存成功！');
     },
-    onError: () => setIsSaving(false),
+    onError: (error: any) => {
+      setIsSaving(false);
+      const errorMessage = error?.response?.data?.error || error?.message || '保存失败';
+      alert(`保存失败: ${errorMessage}`);
+      console.error('Settings update error:', error);
+    },
   });
 
   if (isLoading) return <div className="h-64 w-full animate-pulse rounded-xl bg-zinc-100" />;
