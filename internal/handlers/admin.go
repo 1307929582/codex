@@ -23,7 +23,7 @@ func AdminListUsers(c *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	query := database.DB.Model(&models.User)
+	query := database.DB.Model(&models.User{})
 
 	if search != "" {
 		query = query.Where("email LIKE ? OR username LIKE ?", "%"+search+"%", "%"+search+"%")
