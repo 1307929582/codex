@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Loader2, Save, Server, ArrowRight } from 'lucide-react';
+import { pricingApi } from '@/lib/api/pricing';
+import { Loader2, Save, Server, ArrowRight, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminSettings() {
@@ -13,6 +14,11 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['admin', 'settings'],
     queryFn: () => adminApi.getSettings(),
+  });
+
+  const { data: pricingData } = useQuery({
+    queryKey: ['admin', 'pricing'],
+    queryFn: () => pricingApi.list(),
   });
 
   const [formData, setFormData] = useState({
@@ -106,6 +112,33 @@ export default function AdminSettings() {
               className="mt-3 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
             >
               前往 Codex 上游管理
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Management Notice */}
+      <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+        <div className="flex items-start gap-4">
+          <div className="rounded-lg bg-emerald-100 p-2">
+            <DollarSign className="h-5 w-5 text-emerald-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-emerald-900">定价与价格比例管理</h3>
+            <p className="mt-1 text-sm text-emerald-700">
+              管理所有模型的定价和价格比例（利润率）。当前平均价格比例：
+              <span className="ml-1 font-semibold">
+                {pricingData?.pricing?.length > 0
+                  ? `${(pricingData.pricing.reduce((sum, p) => sum + p.markup_multiplier, 0) / pricingData.pricing.length).toFixed(2)}x`
+                  : '加载中...'}
+              </span>
+            </p>
+            <Link
+              href="/admin/pricing"
+              className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            >
+              前往定价管理
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
