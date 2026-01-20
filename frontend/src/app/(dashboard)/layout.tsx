@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Key, Activity, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, Key, Activity, User, LogOut, Package } from 'lucide-react';
 import { useAuthStore } from '@/lib/stores/auth';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
@@ -26,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: '/dashboard', label: '控制台', icon: LayoutDashboard },
+    { href: '/packages', label: '套餐购买', icon: Package },
     { href: '/keys', label: 'API密钥', icon: Key },
     { href: '/usage', label: '使用记录', icon: Activity },
     { href: '/account', label: '账户信息', icon: User },

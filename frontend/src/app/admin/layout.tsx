@@ -12,12 +12,14 @@ import {
   LogOut,
   ChevronRight,
   ShieldCheck,
-  Server
+  Server,
+  Package
 } from 'lucide-react';
 
 const navigation = [
   { name: '控制台', href: '/admin', icon: LayoutDashboard },
   { name: '用户管理', href: '/admin/users', icon: Users },
+  { name: '套餐管理', href: '/admin/packages', icon: Package },
   { name: 'Codex 上游', href: '/admin/upstreams', icon: Server },
   { name: '系统设置', href: '/admin/settings', icon: Settings },
   { name: '操作日志', href: '/admin/logs', icon: Activity },
