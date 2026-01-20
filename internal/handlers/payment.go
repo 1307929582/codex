@@ -34,6 +34,12 @@ func PurchasePackage(c *gin.Context) {
 		return
 	}
 
+	// Check stock availability
+	if pkg.Stock != -1 && pkg.Stock <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "package is out of stock"})
+		return
+	}
+
 	// Get system settings for Credit config
 	var settings models.SystemSettings
 	if err := database.DB.First(&settings).Error; err != nil {
@@ -172,6 +178,27 @@ func CreditNotify(c *gin.Context) {
 		var pkg models.Package
 		if err := tx.First(&pkg, order.PackageID).Error; err != nil {
 			return err
+		}
+
+		// Check and decrement stock (atomic operation)
+		if pkg.Stock != -1 {
+			result := tx.Model(&models.Package{}).
+				Where("id = ? AND (stock = -1 OR stock > 0)", pkg.ID).
+				Updates(map[string]interface{}{
+					"stock":      gorm.Expr("CASE WHEN stock = -1 THEN -1 ELSE stock - 1 END"),
+					"sold_count": gorm.Expr("sold_count + 1"),
+				})
+
+			if result.Error != nil {
+				return fmt.Errorf("failed to update stock: %v", result.Error)
+			}
+			if result.RowsAffected == 0 {
+				return fmt.Errorf("package is out of stock")
+			}
+		} else {
+			// Unlimited stock, just increment sold count
+			tx.Model(&models.Package{}).Where("id = ?", pkg.ID).
+				Update("sold_count", gorm.Expr("sold_count + 1"))
 		}
 
 		// Create user package

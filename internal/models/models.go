@@ -115,6 +115,8 @@ type Package struct {
 	DailyLimit   float64   `gorm:"type:decimal(18,6);not null" json:"daily_limit"`
 	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
 	SortOrder    int       `gorm:"default:0" json:"sort_order"`
+	Stock        int       `gorm:"default:-1" json:"stock"`        // -1 means unlimited
+	SoldCount    int       `gorm:"default:0" json:"sold_count"`    // Number of packages sold
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

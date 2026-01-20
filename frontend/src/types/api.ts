@@ -115,6 +115,8 @@ export interface Package {
   daily_limit: number;
   status: string;
   sort_order: number;
+  stock: number;        // -1 means unlimited
+  sold_count: number;   // Number of packages sold
   created_at: string;
   updated_at: string;
 }

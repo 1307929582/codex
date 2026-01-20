@@ -103,13 +103,22 @@ export default function PackagesPage() {
               </li>
             </ul>
 
+            {/* Stock Info */}
+            {pkg.stock !== -1 && (
+              <div className="mb-4 rounded-lg bg-zinc-50 px-4 py-2 text-center text-sm">
+                <span className={pkg.stock > 0 ? 'text-zinc-600' : 'text-red-600'}>
+                  {pkg.stock > 0 ? `剩余 ${pkg.stock} 份` : '已售罄'}
+                </span>
+              </div>
+            )}
+
             {/* Purchase Button */}
             <button
               onClick={() => handlePurchase(pkg.id)}
-              disabled={purchasing === pkg.id}
-              className="w-full rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
+              disabled={purchasing === pkg.id || (pkg.stock !== -1 && pkg.stock <= 0)}
+              className="w-full rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {purchasing === pkg.id ? '处理中...' : '立即购买'}
+              {purchasing === pkg.id ? '处理中...' : pkg.stock !== -1 && pkg.stock <= 0 ? '已售罄' : '立即购买'}
             </button>
           </div>
         ))}

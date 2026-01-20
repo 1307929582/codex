@@ -59,6 +59,7 @@ export default function AdminPackagesPage() {
       duration_days: parseInt(formData.get('duration_days') as string),
       daily_limit: parseFloat(formData.get('daily_limit') as string),
       sort_order: parseInt(formData.get('sort_order') as string) || 0,
+      stock: parseInt(formData.get('stock') as string) || -1,
     };
 
     if (editingPackage) {
@@ -129,6 +130,16 @@ export default function AdminPackagesPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">每日限额</span>
                 <span className="font-medium text-zinc-900">${pkg.daily_limit.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">库存</span>
+                <span className={`font-medium ${pkg.stock === -1 ? 'text-green-600' : pkg.stock > 0 ? 'text-zinc-900' : 'text-red-600'}`}>
+                  {pkg.stock === -1 ? '无限' : pkg.stock > 0 ? `${pkg.stock}份` : '售罄'}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">已售</span>
+                <span className="font-medium text-zinc-900">{pkg.sold_count || 0}份</span>
               </div>
             </div>
 
@@ -237,6 +248,17 @@ export default function AdminPackagesPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-zinc-700">库存 (-1=无限)</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    defaultValue={editingPackage?.stock ?? -1}
+                    className="mt-1 w-full rounded-lg border border-zinc-300 px-4 py-2 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-zinc-700">排序</label>
                   <input
                     type="number"
@@ -244,6 +266,13 @@ export default function AdminPackagesPage() {
                     defaultValue={editingPackage?.sort_order || 0}
                     className="mt-1 w-full rounded-lg border border-zinc-300 px-4 py-2 focus:border-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900/10"
                   />
+                </div>
+                <div className="flex items-end">
+                  <div className="text-sm text-zinc-500">
+                    {editingPackage && (
+                      <span>已售: {editingPackage.sold_count || 0}</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-3 pt-4">
