@@ -2,50 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Apple SF Pro Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    /* Apple iOS Blue */
+    --apple-blue: 0 122 255;
+    --apple-blue-hover: 0 106 224;
+
+    /* Glass Morphism Colors */
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-bg-strong: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.8);
+    --glass-shadow: rgba(0, 0, 0, 0.1);
+
+    /* Light Theme */
+    --background: 240 244 249; /* Light gray-blue background */
+    --foreground: 0 0 0;
+
+    --card: 255 255 255;
+    --card-foreground: 0 0 0;
+
+    --popover: 255 255 255;
+    --popover-foreground: 0 0 0;
+
+    --primary: 0 122 255; /* iOS Blue */
+    --primary-foreground: 255 255 255;
+
+    --secondary: 242 242 247; /* iOS Light Gray */
+    --secondary-foreground: 0 0 0;
+
+    --muted: 242 242 247;
+    --muted-foreground: 142 142 147;
+
+    --accent: 0 122 255;
+    --accent-foreground: 255 255 255;
+
+    --destructive: 255 59 48; /* iOS Red */
+    --destructive-foreground: 255 255 255;
+
+    --border: 229 229 234;
+    --input: 229 229 234;
+    --ring: 0 122 255;
+
+    --radius: 12px; /* Apple-style rounded corners */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Glass Morphism Colors - Dark */
+    --glass-bg: rgba(28, 28, 30, 0.6);
+    --glass-bg-strong: rgba(28, 28, 30, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: rgba(0, 0, 0, 0.3);
+
+    /* Dark Theme */
+    --background: 0 0 0; /* Pure black */
+    --foreground: 255 255 255;
+
+    --card: 28 28 30; /* iOS Dark Gray */
+    --card-foreground: 255 255 255;
+
+    --popover: 28 28 30;
+    --popover-foreground: 255 255 255;
+
+    --primary: 10 132 255; /* iOS Blue (lighter for dark mode) */
+    --primary-foreground: 255 255 255;
+
+    --secondary: 44 44 46; /* iOS Dark Gray 2 */
+    --secondary-foreground: 255 255 255;
+
+    --muted: 44 44 46;
+    --muted-foreground: 142 142 147;
+
+    --accent: 10 132 255;
+    --accent-foreground: 255 255 255;
+
+    --destructive: 255 69 58; /* iOS Red (lighter for dark mode) */
+    --destructive-foreground: 255 255 255;
+
+    --border: 58 58 60;
+    --input: 58 58 60;
+    --ring: 10 132 255;
   }
 }
 
@@ -53,7 +91,64 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Glass Morphism Base Styles */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  }
+
+  .glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  }
+
+  /* Apple-style smooth transitions */
+  * {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer utilities {
+  /* Glass Morphism Utilities */
+  .backdrop-blur-apple {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .backdrop-blur-apple-strong {
+    backdrop-filter: blur(30px) saturate(200%);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+  }
+
+  /* Apple-style shadows */
+  .shadow-apple {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-apple-lg {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Apple-style hover effects */
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
   }
 }
