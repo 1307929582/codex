@@ -100,9 +100,15 @@ func ProxyHandler(c *gin.Context) {
 		codex.TransformRequest(reqBody)
 	}
 
-	// Pre-flight balance check
-	if user.Balance <= 0 {
-		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance"})
+	// Pre-flight check: user must have balance OR active package
+	today := database.GetToday()
+	var activePackage models.UserPackage
+	hasActivePackage := database.DB.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
+		user.ID, "active", today, today).
+		First(&activePackage).Error == nil
+
+	if user.Balance <= 0 && !hasActivePackage {
+		c.JSON(http.StatusPaymentRequired, gin.H{"error": "insufficient balance or active package"})
 		return
 	}
 
