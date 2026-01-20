@@ -272,13 +272,13 @@ func AdminUpdateSettings(c *gin.Context) {
 // AdminGetOverview gets system overview statistics
 func AdminGetOverview(c *gin.Context) {
 	var stats struct {
-		TotalUsers      int64
-		ActiveUsers     int64
-		TotalRevenue    float64
-		TotalCost       float64
-		TotalAPIKeys    int64
-		TodayRequests   int64
-		TodayRevenue    float64
+		TotalUsers    int64   `json:"total_users"`
+		ActiveUsers   int64   `json:"active_users"`
+		TotalRevenue  float64 `json:"total_revenue"`
+		TotalCost     float64 `json:"total_cost"`
+		TotalAPIKeys  int64   `json:"total_api_keys"`
+		TodayRequests int64   `json:"today_requests"`
+		TodayRevenue  float64 `json:"today_revenue"`
 	}
 
 	// Total users

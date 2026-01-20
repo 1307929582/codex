@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
-import { Users, DollarSign, Activity, Key, ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
+import { Users, DollarSign, Activity, Key, ChevronRight } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { data: stats, isLoading } = useQuery({
@@ -16,32 +16,24 @@ export default function AdminDashboard() {
     {
       label: '总收入',
       value: `$${(stats?.total_revenue || 0).toFixed(2)}`,
-      change: '+12.5%',
-      trend: 'up',
       icon: DollarSign,
       desc: '全部收入'
     },
     {
       label: '活跃用户',
       value: stats?.active_users || 0,
-      change: '+2.1%',
-      trend: 'up',
       icon: Users,
       desc: `共 ${stats?.total_users || 0} 个用户`
     },
     {
       label: 'API密钥',
       value: stats?.total_api_keys || 0,
-      change: '+5',
-      trend: 'neutral',
       icon: Key,
       desc: '活跃密钥'
     },
     {
       label: '今日请求',
       value: stats?.today_requests || 0,
-      change: '-1.2%',
-      trend: 'down',
       icon: Activity,
       desc: '每日流量'
     },
@@ -64,14 +56,6 @@ export default function AdminDashboard() {
               <div className="rounded-lg bg-zinc-50 p-2 ring-1 ring-zinc-100">
                 <metric.icon className="h-4 w-4 text-zinc-500" />
               </div>
-              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                metric.trend === 'up' ? 'bg-emerald-50 text-emerald-700' :
-                metric.trend === 'down' ? 'bg-red-50 text-red-700' : 'bg-zinc-50 text-zinc-600'
-              }`}>
-                {metric.trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> :
-                 metric.trend === 'down' ? <ArrowDownRight className="h-3 w-3" /> : null}
-                {metric.change}
-              </span>
             </div>
             <div className="mt-4">
               <h3 className="text-sm font-medium text-zinc-500">{metric.label}</h3>
