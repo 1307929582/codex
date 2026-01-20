@@ -38,8 +38,8 @@ func getLinuxDoOAuthConfig() (*oauth2.Config, error) {
 		RedirectURL:  config.AppConfig.FrontendURL + "/api/auth/linuxdo/callback",
 		Scopes:       []string{"read"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://linux.do/oauth2/authorize",
-			TokenURL: "https://linux.do/oauth2/token",
+			AuthURL:  "https://connect.linux.do/oauth2/authorize",
+			TokenURL: "https://connect.linux.do/oauth2/token",
 		},
 	}, nil
 }
