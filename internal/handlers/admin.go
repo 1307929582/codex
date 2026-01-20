@@ -270,8 +270,25 @@ func AdminUpdateSettings(c *gin.Context) {
 			}
 		} else {
 			// Update existing settings
-			// Use Select to update all fields including zero values (false for booleans)
-			if err := tx.Model(&settings).Select("*").Updates(req).Error; err != nil {
+			// Use map to update all fields including zero values (false for booleans)
+			updates := map[string]interface{}{
+				"announcement":                  req.Announcement,
+				"default_balance":               req.DefaultBalance,
+				"min_recharge_amount":           req.MinRechargeAmount,
+				"email_registration_enabled":    req.EmailRegistrationEnabled,
+				"linux_do_registration_enabled": req.LinuxDoRegistrationEnabled,
+				"openai_api_key":                req.OpenAIAPIKey,
+				"openai_base_url":               req.OpenAIBaseURL,
+				"linuxdo_client_id":             req.LinuxDoClientID,
+				"linuxdo_client_secret":         req.LinuxDoClientSecret,
+				"linuxdo_enabled":               req.LinuxDoEnabled,
+				"credit_enabled":                req.CreditEnabled,
+				"credit_pid":                    req.CreditPID,
+				"credit_key":                    req.CreditKey,
+				"credit_notify_url":             req.CreditNotifyURL,
+				"credit_return_url":             req.CreditReturnURL,
+			}
+			if err := tx.Model(&settings).Updates(updates).Error; err != nil {
 				return err
 			}
 		}
