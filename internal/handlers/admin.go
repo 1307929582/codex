@@ -23,10 +23,10 @@ func AdminListUsers(c *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	query := database.DB.Model(&models.User{})
+	query := database.DB.Model(&models.User)
 
 	if search != "" {
-		query = query.Where("email LIKE ?", "%"+search+"%")
+		query = query.Where("email LIKE ? OR username LIKE ?", "%"+search+"%", "%"+search+"%")
 	}
 
 	if status != "" {
@@ -42,12 +42,36 @@ func AdminListUsers(c *gin.Context) {
 		return
 	}
 
+	// Get active packages for each user
+	today := database.GetToday()
+	type UserWithPackage struct {
+		models.User
+		ActivePackage *models.UserPackage `json:"active_package"`
+	}
+
+	var usersWithPackages []UserWithPackage
+	for _, user := range users {
+		var activePackage models.UserPackage
+		err := database.DB.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
+			user.ID, "active", today, today).
+			Order("end_date ASC").
+			First(&activePackage).Error
+
+		userWithPkg := UserWithPackage{
+			User: user,
+		}
+		if err == nil {
+			userWithPkg.ActivePackage = &activePackage
+		}
+		usersWithPackages = append(usersWithPackages, userWithPkg)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"users": users,
+		"users": usersWithPackages,
 		"pagination": gin.H{
-			"page":       page,
-			"page_size":  pageSize,
-			"total":      total,
+			"page":        page,
+			"page_size":   pageSize,
+			"total":       total,
 			"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
 		},
 	})

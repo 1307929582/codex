@@ -108,6 +108,9 @@ export default function AdminUsersPage() {
                   余额
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  套餐
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
                   状态
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
@@ -149,6 +152,20 @@ export default function AdminUsersPage() {
                     <div className="text-sm font-medium text-zinc-900">
                       ${user.balance.toFixed(2)}
                     </div>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {user.active_package ? (
+                      <div className="text-sm">
+                        <div className="font-medium text-emerald-600">
+                          {user.active_package.package_name}
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          至 {new Date(user.active_package.end_date).toLocaleDateString('zh-CN')}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-zinc-400">按量付费</span>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span

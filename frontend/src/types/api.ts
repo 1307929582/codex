@@ -84,6 +84,7 @@ export interface AdminUser extends User {
   api_key_count?: number;
   total_cost?: number;
   total_tokens?: number;
+  active_package?: UserPackage;
 }
 
 export interface SystemSettings {
