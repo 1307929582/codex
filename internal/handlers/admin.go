@@ -300,21 +300,21 @@ func AdminGetOverview(c *gin.Context) {
 	// Total API keys
 	database.DB.Model(&models.APIKey{}).Count(&stats.TotalAPIKeys)
 
-	// Today's requests (using timezone-aware query)
+	// Today's requests (UTC+8 timezone)
 	database.DB.Model(&models.UsageLog{}).
-		Where("created_at >= CURRENT_DATE AND created_at < CURRENT_DATE + INTERVAL '1 day'").
+		Where("(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai')::date = (NOW() AT TIME ZONE 'Asia/Shanghai')::date").
 		Count(&stats.TodayRequests)
 
-	// Today's revenue
+	// Today's revenue (UTC+8 timezone)
 	database.DB.Model(&models.UsageLog{}).
-		Where("created_at >= CURRENT_DATE AND created_at < CURRENT_DATE + INTERVAL '1 day'").
+		Where("(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai')::date = (NOW() AT TIME ZONE 'Asia/Shanghai')::date").
 		Select("COALESCE(SUM(cost), 0)").
 		Scan(&stats.TodayRevenue)
 
 	c.JSON(http.StatusOK, stats)
 }
 
-// AdminGetUsageChart gets hourly usage statistics for the last 24 hours
+// AdminGetUsageChart gets hourly usage statistics for the last 24 hours (UTC+8)
 func AdminGetUsageChart(c *gin.Context) {
 	type HourlyUsage struct {
 		Hour string  `json:"hour"`
@@ -323,11 +323,11 @@ func AdminGetUsageChart(c *gin.Context) {
 
 	var hourlyData []HourlyUsage
 
-	// Get hourly usage for the last 24 hours
+	// Get hourly usage for the last 24 hours in Asia/Shanghai timezone
 	database.DB.Model(&models.UsageLog{}).
-		Select("TO_CHAR(created_at, 'HH24:00') as hour, COALESCE(SUM(cost), 0) as cost").
-		Where("created_at >= NOW() - INTERVAL '24 hours'").
-		Group("TO_CHAR(created_at, 'HH24:00')").
+		Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00') as hour, COALESCE(SUM(cost), 0) as cost").
+		Where("created_at >= (NOW() AT TIME ZONE 'Asia/Shanghai' - INTERVAL '24 hours') AT TIME ZONE 'Asia/Shanghai' AT TIME ZONE 'UTC'").
+		Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00')").
 		Order("hour").
 		Scan(&hourlyData)
 
