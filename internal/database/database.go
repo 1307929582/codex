@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"codex-gateway/internal/config"
 	"codex-gateway/internal/models"
@@ -31,14 +32,32 @@ func Connect() error {
 	)
 
 	var err error
+	// Use Error level logging in production to reduce overhead
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Error),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	log.Println("Database connected successfully")
+	// Configure connection pool for high concurrency
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database instance: %w", err)
+	}
+
+	// SetMaxIdleConns sets the maximum number of connections in the idle connection pool
+	sqlDB.SetMaxIdleConns(10)
+
+	// SetMaxOpenConns sets the maximum number of open connections to the database
+	// This allows up to 100 concurrent database operations
+	sqlDB.SetMaxOpenConns(100)
+
+	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused
+	// This helps prevent issues with stale connections
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	log.Println("Database connected successfully with connection pool configured")
 	return nil
 }
 
