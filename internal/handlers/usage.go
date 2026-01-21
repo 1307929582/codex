@@ -254,6 +254,7 @@ func AdminGetUsageLogs(c *gin.Context) {
 		InputTokens  int     `json:"input_tokens"`
 		OutputTokens int     `json:"output_tokens"`
 		CachedTokens int     `json:"cached_tokens"`
+		CacheCreationTokens int `json:"cache_creation_tokens"`
 		TotalTokens  int     `json:"total_tokens"`
 		Cost         float64 `json:"cost"`
 		LatencyMs    int     `json:"latency_ms"`
@@ -277,6 +278,7 @@ func AdminGetUsageLogs(c *gin.Context) {
 			InputTokens:  log.InputTokens,
 			OutputTokens: log.OutputTokens,
 			CachedTokens: log.CachedTokens,
+			CacheCreationTokens: log.CacheCreationTokens,
 			TotalTokens:  log.TotalTokens,
 			Cost:         log.Cost,
 			LatencyMs:    log.LatencyMs,

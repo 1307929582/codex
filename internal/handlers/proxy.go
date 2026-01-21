@@ -231,6 +231,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		PromptTokens     int
 		CompletionTokens int
 		CachedTokens     int
+		CacheCreationTokens int
 		TotalTokens      int
 	}
 
@@ -315,21 +316,20 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					cacheCreationTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CacheCreationTokens
 				}
 
-				log.Printf("[DEBUG] Codex response.completed: input_tokens=%d, output_tokens=%d, cached_tokens=%d",
+				log.Printf("[DEBUG] Codex response.completed: input_tokens=%d, output_tokens=%d, cache_read_tokens=%d, cache_creation_tokens=%d",
 					codexEvent.Response.Usage.InputTokens,
 					codexEvent.Response.Usage.OutputTokens,
-					cacheReadTokens)
-				if cacheCreationTokens > 0 {
-					log.Printf("[DEBUG] Codex cache_creation_tokens=%d", cacheCreationTokens)
-				}
+					cacheReadTokens,
+					cacheCreationTokens)
 
 				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
 				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
 				lastUsage.CachedTokens = cacheReadTokens
-				lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+				lastUsage.CacheCreationTokens = cacheCreationTokens
+				lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 
-				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d",
-					lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d, CacheCreationTokens=%d",
+					lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 				continue
 			}
 
@@ -369,8 +369,10 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					if cacheReadTokens == 0 {
 						cacheReadTokens = chunk.Usage.PromptTokenDetails.CachedTokens
 					}
+					cacheCreationTokens := chunk.Usage.PromptTokenDetails.CacheCreationTokens
 					lastUsage.CachedTokens = cacheReadTokens
-					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+					lastUsage.CacheCreationTokens = cacheCreationTokens
+					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 				} else if chunk.Usage.InputTokens > 0 || chunk.Usage.OutputTokens > 0 {
 					// Direct usage format (non-event)
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
@@ -385,8 +387,13 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 							cacheReadTokens = chunk.Usage.InputTokenDetailsAlt.CachedTokens
 						}
 					}
+					cacheCreationTokens := chunk.Usage.InputTokenDetails.CacheCreationTokens
+					if cacheCreationTokens == 0 {
+						cacheCreationTokens = chunk.Usage.InputTokenDetailsAlt.CacheCreationTokens
+					}
 					lastUsage.CachedTokens = cacheReadTokens
-					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+					lastUsage.CacheCreationTokens = cacheCreationTokens
+					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 				}
 			}
 		}
@@ -403,13 +410,13 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Bill user after stream completes
 	if lastUsage.TotalTokens > 0 {
-		log.Printf("[DEBUG] Billing: model=%s, input=%d, output=%d, cached=%d",
-			model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+		log.Printf("[DEBUG] Billing: model=%s, input=%d, output=%d, cache_read=%d, cache_create=%d",
+			model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 
-		cost, err := calculateCostWithCache(model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
+		cost, err := calculateCostWithCache(model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 		if err == nil {
 			log.Printf("[DEBUG] Cost calculated: $%.6f", cost)
-			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, cost, latencyMs)
+			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens, cost, latencyMs)
 		}
 	} else if outputBytes > 0 || streamedChunks > 0 {
 		// Fallback: estimate tokens if usage info not available
@@ -423,9 +430,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		}
 		estimatedInput := estimatedOutput / 10
 
-		cost, err := calculateCostWithCache(model, estimatedInput, estimatedOutput, 0)
+		cost, err := calculateCostWithCache(model, estimatedInput, estimatedOutput, 0, 0)
 		if err == nil {
-			_ = recordUsageAndBill(user.ID, apiKey.ID, model, estimatedInput, estimatedOutput, 0, cost, latencyMs)
+			_ = recordUsageAndBill(user.ID, apiKey.ID, model, estimatedInput, estimatedOutput, 0, 0, cost, latencyMs)
 		}
 	}
 }
@@ -456,6 +463,7 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	if cachedTokens == 0 {
 		cachedTokens = upstreamResp.Usage.PromptTokenDetails.CachedTokens
 	}
+	cacheCreationTokens := upstreamResp.Usage.PromptTokenDetails.CacheCreationTokens
 
 	// If ChatGPT fields are empty, try Codex fields
 	if inputTokens == 0 && outputTokens == 0 {
@@ -471,6 +479,10 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 				cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
 			}
 		}
+		cacheCreationTokens = upstreamResp.Usage.InputTokenDetails.CacheCreationTokens
+		if cacheCreationTokens == 0 {
+			cacheCreationTokens = upstreamResp.Usage.InputTokenDetailsAlt.CacheCreationTokens
+		}
 	} else if cachedTokens == 0 {
 		cachedTokens = upstreamResp.Usage.InputTokenDetails.CacheReadTokens
 		if cachedTokens == 0 {
@@ -484,13 +496,20 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 		}
 	}
 
-	cost, err := calculateCostWithCache(model, inputTokens, outputTokens, cachedTokens)
+	if cacheCreationTokens == 0 {
+		cacheCreationTokens = upstreamResp.Usage.InputTokenDetails.CacheCreationTokens
+		if cacheCreationTokens == 0 {
+			cacheCreationTokens = upstreamResp.Usage.InputTokenDetailsAlt.CacheCreationTokens
+		}
+	}
+
+	cost, err := calculateCostWithCache(model, inputTokens, outputTokens, cachedTokens, cacheCreationTokens)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("pricing error: %v", err)})
 		return
 	}
 
-	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cachedTokens, cost, latencyMs); err != nil {
+	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cachedTokens, cacheCreationTokens, cost, latencyMs); err != nil {
 		if strings.Contains(err.Error(), "insufficient balance") || strings.Contains(err.Error(), "api key quota exceeded") {
 			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
 			return
@@ -537,29 +556,31 @@ func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, base
 	return &openAIResp, nil
 }
 
-func resolveBillableInputTokens(inputTokens, cacheReadTokens int) int {
-	if cacheReadTokens <= 0 {
-		return inputTokens
+func resolveBillableInputTokens(inputTokens, cacheReadTokens, cacheCreationTokens int) int {
+	if inputTokens <= 0 {
+		return 0
 	}
-	if cacheReadTokens > inputTokens {
-		return inputTokens
+	billable := inputTokens - cacheReadTokens - cacheCreationTokens
+	if billable < 0 {
+		return 0
 	}
-	return inputTokens - cacheReadTokens
+	return billable
 }
 
-func resolveTotalTokens(inputTokens, outputTokens, cacheReadTokens int) int {
+func resolveTotalTokens(inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens int) int {
 	total := inputTokens + outputTokens
-	if cacheReadTokens > inputTokens {
-		total = inputTokens + outputTokens + cacheReadTokens
+	cacheInput := cacheReadTokens + cacheCreationTokens
+	if cacheInput > inputTokens {
+		total = cacheInput + outputTokens
 	}
 	return total
 }
 
 func calculateCost(model string, inputTokens, outputTokens int) (float64, error) {
-	return calculateCostWithCache(model, inputTokens, outputTokens, 0)
+	return calculateCostWithCache(model, inputTokens, outputTokens, 0, 0)
 }
 
-func calculateCostWithCache(model string, inputTokens, outputTokens, cachedTokens int) (float64, error) {
+func calculateCostWithCache(model string, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens int) (float64, error) {
 	var pricing models.ModelPricing
 	if err := database.DB.Where("model_name = ?", model).First(&pricing).Error; err != nil {
 		return 0, fmt.Errorf("pricing not found for model: %s", model)
@@ -567,23 +588,24 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 
 	// Calculate costs for each token type
 	// Note: cached_tokens in Codex API = cache_read_tokens (tokens read from cache)
-	// These are billed at a discounted rate (typically 10% of input price)
-	billableInputTokens := resolveBillableInputTokens(inputTokens, cachedTokens)
+	// Cache read/creation tokens are billed at discounted rates.
+	billableInputTokens := resolveBillableInputTokens(inputTokens, cacheReadTokens, cacheCreationTokens)
 	inputCost := (float64(billableInputTokens) / 1000.0) * pricing.InputPricePer1k
-	cacheReadCost := (float64(cachedTokens) / 1000.0) * pricing.CacheReadPricePer1k
+	cacheReadCost := (float64(cacheReadTokens) / 1000.0) * pricing.CacheReadPricePer1k
+	cacheCreateCost := (float64(cacheCreationTokens) / 1000.0) * pricing.CacheCreationPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
 
-	return (inputCost + cacheReadCost + outputCost) * pricing.MarkupMultiplier, nil
+	return (inputCost + cacheReadCost + cacheCreateCost + outputCost) * pricing.MarkupMultiplier, nil
 }
 
-func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens, cachedTokens int, cost float64, latencyMs int) error {
+func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens int, cost float64, latencyMs int) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		// Use new billing logic that supports package quota
 		if err := billing.DeductCost(tx, userID, cost); err != nil {
 			return err
 		}
 
-		totalTokens := resolveTotalTokens(inputTokens, outputTokens, cachedTokens)
+		totalTokens := resolveTotalTokens(inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens)
 
 		log := models.UsageLog{
 			UserID:       userID,
@@ -591,7 +613,8 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			Model:        model,
 			InputTokens:  inputTokens,
 			OutputTokens: outputTokens,
-			CachedTokens: cachedTokens,
+			CachedTokens: cacheReadTokens,
+			CacheCreationTokens: cacheCreationTokens,
 			TotalTokens:  totalTokens,
 			Cost:         cost,
 			LatencyMs:    latencyMs,

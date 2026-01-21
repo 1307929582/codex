@@ -31,6 +31,7 @@ export interface UsageLog {
   input_tokens: number;
   output_tokens: number;
   cached_tokens: number;
+  cache_creation_tokens: number;
   total_tokens: number;
   cost: number;
   latency_ms: number;
@@ -48,6 +49,7 @@ export interface AdminUsageLog {
   input_tokens: number;
   output_tokens: number;
   cached_tokens: number;
+  cache_creation_tokens: number;
   total_tokens: number;
   cost: number;
   latency_ms: number;

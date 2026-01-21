@@ -31,10 +31,11 @@ func AdminUpdatePricing(c *gin.Context) {
 	}
 
 	var req struct {
-		InputPricePer1k     *float64 `json:"input_price_per_1k"`
-		OutputPricePer1k    *float64 `json:"output_price_per_1k"`
-		CacheReadPricePer1k *float64 `json:"cache_read_price_per_1k"`
-		MarkupMultiplier    *float64 `json:"markup_multiplier"`
+		InputPricePer1k         *float64 `json:"input_price_per_1k"`
+		OutputPricePer1k        *float64 `json:"output_price_per_1k"`
+		CacheReadPricePer1k     *float64 `json:"cache_read_price_per_1k"`
+		CacheCreationPricePer1k *float64 `json:"cache_creation_price_per_1k"`
+		MarkupMultiplier        *float64 `json:"markup_multiplier"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,6 +52,9 @@ func AdminUpdatePricing(c *gin.Context) {
 	}
 	if req.CacheReadPricePer1k != nil {
 		pricing.CacheReadPricePer1k = *req.CacheReadPricePer1k
+	}
+	if req.CacheCreationPricePer1k != nil {
+		pricing.CacheCreationPricePer1k = *req.CacheCreationPricePer1k
 	}
 	if req.MarkupMultiplier != nil {
 		pricing.MarkupMultiplier = *req.MarkupMultiplier

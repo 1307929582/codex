@@ -6,6 +6,7 @@ export interface ModelPricing {
   input_price_per_1k: number;
   output_price_per_1k: number;
   cache_read_price_per_1k: number;
+  cache_creation_price_per_1k: number;
   markup_multiplier: number;
   effective_from: string;
 }

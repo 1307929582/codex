@@ -15,14 +15,15 @@ export default function UsagePage() {
   const [endDate, setEndDate] = useState('');
   const pageSize = 20;
 
-  const getBillableInputTokens = (inputTokens: number, cachedTokens: number) => {
-    if (cachedTokens <= 0) {
-      return inputTokens;
-    }
-    if (cachedTokens > inputTokens) {
-      return inputTokens;
-    }
-    return inputTokens - cachedTokens;
+  const getBillableInputTokens = (
+    inputTokens: number,
+    cachedTokens?: number,
+    cacheCreationTokens?: number
+  ) => {
+    const cacheRead = cachedTokens ?? 0;
+    const cacheCreate = cacheCreationTokens ?? 0;
+    const billable = inputTokens - cacheRead - cacheCreate;
+    return billable > 0 ? billable : 0;
   };
 
   useEffect(() => {
@@ -94,7 +95,8 @@ export default function UsagePage() {
               <TableHead>模型</TableHead>
               <TableHead>计费输入</TableHead>
               <TableHead>输出Token</TableHead>
-              <TableHead>缓存Token</TableHead>
+              <TableHead>缓存读取</TableHead>
+              <TableHead>缓存创建</TableHead>
               <TableHead>总Token</TableHead>
               <TableHead>费用</TableHead>
               <TableHead>延迟</TableHead>
@@ -104,30 +106,42 @@ export default function UsagePage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center h-24">
+                <TableCell colSpan={10} className="text-center h-24">
                   加载中...
                 </TableCell>
               </TableRow>
             ) : data?.data?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center h-24">
+                <TableCell colSpan={10} className="text-center h-24">
                   未找到使用记录。
                 </TableCell>
               </TableRow>
             ) : (
-              data?.data?.map((log: any) => (
+              data?.data?.map((log: any) => {
+                const cacheReadTokens = log.cached_tokens ?? 0;
+                const cacheCreationTokens = log.cache_creation_tokens ?? 0;
+                return (
                 <TableRow key={log.request_id}>
                   <TableCell className="text-sm">
                     {new Date(log.created_at).toLocaleString()}
                   </TableCell>
                   <TableCell className="font-mono text-xs">{log.model}</TableCell>
                   <TableCell>
-                    {getBillableInputTokens(log.input_tokens, log.cached_tokens)}
+                    {getBillableInputTokens(log.input_tokens, cacheReadTokens, cacheCreationTokens)}
                   </TableCell>
                   <TableCell>{log.output_tokens}</TableCell>
                   <TableCell>
-                    {log.cached_tokens > 0 ? (
-                      <span className="text-green-600 font-medium">{log.cached_tokens}</span>
+                    {cacheReadTokens > 0 ? (
+                      <span className="text-green-600 font-medium">{cacheReadTokens}</span>
+                    ) : (
+                      <span className="text-gray-400">0</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cacheCreationTokens > 0 ? (
+                      <span className="text-emerald-600 font-medium">
+                        {cacheCreationTokens}
+                      </span>
                     ) : (
                       <span className="text-gray-400">0</span>
                     )}
@@ -141,7 +155,8 @@ export default function UsagePage() {
                     </Badge>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+            })
             )}
           </TableBody>
         </Table>

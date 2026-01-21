@@ -47,6 +47,7 @@ type ModelPricing struct {
 	InputPricePer1k      float64   `gorm:"type:decimal(10,6);not null" json:"input_price_per_1k"`
 	OutputPricePer1k     float64   `gorm:"type:decimal(10,6);not null" json:"output_price_per_1k"`
 	CacheReadPricePer1k  float64   `gorm:"type:decimal(10,6);default:0" json:"cache_read_price_per_1k"` // Cache read tokens pricing (usually 10% of input price)
+	CacheCreationPricePer1k float64 `gorm:"type:decimal(10,6);default:0" json:"cache_creation_price_per_1k"` // Cache creation tokens pricing
 	MarkupMultiplier     float64   `gorm:"type:decimal(4,2);default:1.5" json:"markup_multiplier"`
 	EffectiveFrom        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"effective_from"`
 }
@@ -61,6 +62,7 @@ type UsageLog struct {
 	InputTokens  int       `gorm:"not null" json:"input_tokens"`
 	OutputTokens int       `gorm:"not null" json:"output_tokens"`
 	CachedTokens int       `gorm:"default:0" json:"cached_tokens"` // Cached input tokens
+	CacheCreationTokens int `gorm:"default:0" json:"cache_creation_tokens"`
 	TotalTokens  int       `gorm:"not null" json:"total_tokens"`
 	Cost         float64   `gorm:"type:decimal(18,6);not null" json:"cost"`
 	LatencyMs    int       `json:"latency_ms"`
