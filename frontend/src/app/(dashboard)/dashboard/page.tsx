@@ -64,6 +64,10 @@ export default function DashboardPage() {
   ];
 
   const chartTotal = chartData.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
+  const dailyLimit = dailyUsage?.user_daily_limit ?? null;
+  const totalUsed = dailyUsage?.total_used_amount ?? 0;
+  const dailyRemaining =
+    dailyUsage?.user_remaining ?? (dailyLimit !== null ? Math.max(dailyLimit - totalUsed, 0) : 0);
 
   if (isLoading) {
     return (
@@ -235,6 +239,49 @@ export default function DashboardPage() {
       </Card>
 
       {/* Package Status */}
+      {dailyLimit !== null && (
+        <Card className="border-apple-blue/20 bg-white">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold text-apple-blue">
+              每日总限额
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">今日已用</span>
+                <span className="font-medium">
+                  ${totalUsed.toFixed(4)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">每日上限</span>
+                <span className="font-medium">
+                  ${dailyLimit.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">剩余</span>
+                <span className="font-medium">
+                  ${dailyRemaining.toFixed(4)}
+                </span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-apple-blue/10">
+                <div
+                  className="h-full bg-apple-blue transition-all"
+                  style={{
+                    width: `${Math.min(
+                      ((totalUsed || 0) / (dailyLimit || 1)) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {dailyUsage?.package && (
         <Card className="border-apple-blue/20 bg-apple-blue/5">
           <CardHeader>

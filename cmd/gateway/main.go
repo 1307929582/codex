@@ -137,6 +137,7 @@ func main() {
 			admin.GET("/users/:id", handlers.AdminGetUser)
 			admin.PUT("/users/:id/balance", handlers.AdminUpdateBalance)
 			admin.PUT("/users/:id/status", handlers.AdminUpdateUserStatus)
+			admin.PUT("/users/:id/daily-limit", handlers.AdminUpdateUserDailyLimit)
 
 			// System Settings
 			admin.GET("/settings", handlers.AdminGetSettings)

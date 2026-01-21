@@ -242,6 +242,68 @@ func AdminUpdateUserStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user status updated successfully"})
 }
 
+// AdminUpdateUserDailyLimit updates a user's daily usage limit
+func AdminUpdateUserDailyLimit(c *gin.Context) {
+	admin := c.MustGet("admin").(models.User)
+	userID := c.Param("id")
+
+	var req struct {
+		DailyUsageLimit *float64 `json:"daily_usage_limit"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
+
+	if req.DailyUsageLimit != nil && *req.DailyUsageLimit < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid daily usage limit"})
+		return
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(&models.User{}).
+			Where("id = ?", uid).
+			Update("daily_usage_limit", req.DailyUsageLimit)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("user not found")
+		}
+
+		limitText := "unlimited"
+		if req.DailyUsageLimit != nil {
+			limitText = fmt.Sprintf("%.6f", *req.DailyUsageLimit)
+		}
+
+		log := models.AdminLog{
+			AdminID:   admin.ID,
+			Action:    "update_daily_usage_limit",
+			Target:    userID,
+			Details:   fmt.Sprintf("Limit: %s", limitText),
+			IPAddress: c.ClientIP(),
+		}
+
+		return tx.Create(&log).Error
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "daily usage limit updated successfully"})
+}
+
 // AdminGetSettings gets system settings
 func AdminGetSettings(c *gin.Context) {
 	var settings models.SystemSettings

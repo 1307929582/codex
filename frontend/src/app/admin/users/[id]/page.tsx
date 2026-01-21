@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, DollarSign } from 'lucide-react';
+import { ArrowLeft, DollarSign, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminUserDetailPage() {
@@ -16,6 +16,8 @@ export default function AdminUserDetailPage() {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [balanceAmount, setBalanceAmount] = useState('');
   const [balanceDescription, setBalanceDescription] = useState('');
+  const [showDailyLimitModal, setShowDailyLimitModal] = useState(false);
+  const [dailyLimitAmount, setDailyLimitAmount] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'user', userId],
@@ -32,6 +34,34 @@ export default function AdminUserDetailPage() {
       setBalanceDescription('');
     },
   });
+
+  const updateDailyLimitMutation = useMutation({
+    mutationFn: (limit: number | null) => adminApi.updateDailyUsageLimit(userId, limit),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', userId] });
+      setShowDailyLimitModal(false);
+      setDailyLimitAmount('');
+    },
+    onError: () => {
+      alert('保存失败，请稍后重试');
+    },
+  });
+
+  const openDailyLimitModal = () => {
+    const current = data?.user?.daily_usage_limit;
+    setDailyLimitAmount(current === null || current === undefined ? '' : current.toString());
+    setShowDailyLimitModal(true);
+  };
+
+  const handleSaveDailyLimit = () => {
+    const value = dailyLimitAmount.trim();
+    const parsed = value === '' ? null : parseFloat(value);
+    if (value !== '' && (isNaN(parsed) || parsed < 0)) {
+      alert('请输入有效的每日上限');
+      return;
+    }
+    updateDailyLimitMutation.mutate(parsed);
+  };
 
   if (isLoading) {
     return (
@@ -153,6 +183,26 @@ export default function AdminUserDetailPage() {
           </div>
 
           <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">每日使用上限</p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  {data.user.daily_usage_limit === null || data.user.daily_usage_limit === undefined
+                    ? '无限制'
+                    : `$${data.user.daily_usage_limit.toFixed(2)}`}
+                </p>
+              </div>
+              <button
+                onClick={openDailyLimitModal}
+                className="rounded-lg bg-gray-900 p-2 text-white hover:bg-gray-800"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-500">留空表示不限制</p>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow-sm">
             <p className="text-sm font-medium text-gray-500">API密钥数量</p>
             <p className="mt-2 text-3xl font-bold text-gray-900">
               {data.api_key_count}
@@ -219,6 +269,44 @@ export default function AdminUserDetailPage() {
                   className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {updateBalanceMutation.isPending ? '处理中...' : '确认'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDailyLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6">
+            <h3 className="mb-4 text-xl font-bold text-gray-900">设置每日使用上限</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  每日上限（USD，留空为不限制）
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={dailyLimitAmount}
+                  onChange={(e) => setDailyLimitAmount(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                  placeholder="例如: 50 或留空"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDailyLimitModal(false)}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveDailyLimit}
+                  disabled={updateDailyLimitMutation.isPending}
+                  className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {updateDailyLimitMutation.isPending ? '处理中...' : '确认'}
                 </button>
               </div>
             </div>

@@ -8,12 +8,13 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string    `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
-	Balance      float64   `gorm:"type:decimal(18,6);default:0" json:"balance"`
-	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
-	Role         string    `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
+	ID              uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Email           string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash    string    `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
+	Balance         float64   `gorm:"type:decimal(18,6);default:0" json:"balance"`
+	DailyUsageLimit *float64  `gorm:"type:decimal(18,6)" json:"daily_usage_limit"`
+	Status          string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	Role            string    `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
 
 	// OAuth fields
 	OAuthProvider string `gorm:"type:varchar(50)" json:"oauth_provider"`            // "linuxdo", "email", etc.
@@ -162,14 +163,15 @@ type UserPackage struct {
 }
 
 type DailyUsage struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID        uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
-	User          User       `gorm:"foreignKey:UserID" json:"-"`
-	UserPackageID *uuid.UUID `gorm:"type:uuid" json:"user_package_id"`
-	Date          time.Time  `gorm:"type:date;not null" json:"date"`
-	UsedAmount    float64    `gorm:"type:decimal(18,6);default:0" json:"used_amount"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
+	ID              uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID          uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	User            User       `gorm:"foreignKey:UserID" json:"-"`
+	UserPackageID   *uuid.UUID `gorm:"type:uuid" json:"user_package_id"`
+	Date            time.Time  `gorm:"type:date;not null" json:"date"`
+	UsedAmount      float64    `gorm:"type:decimal(18,6);default:0" json:"used_amount"`
+	TotalUsedAmount float64    `gorm:"type:decimal(18,6);default:0" json:"total_used_amount"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 func (DailyUsage) TableName() string {

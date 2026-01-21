@@ -497,7 +497,9 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	}
 
 	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cachedTokens, cacheCreationTokens, cost, latencyMs); err != nil {
-		if strings.Contains(err.Error(), "insufficient balance") || strings.Contains(err.Error(), "api key quota exceeded") {
+		if strings.Contains(err.Error(), "insufficient balance") ||
+			strings.Contains(err.Error(), "api key quota exceeded") ||
+			strings.Contains(err.Error(), "daily usage limit exceeded") {
 			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
 			return
 		}

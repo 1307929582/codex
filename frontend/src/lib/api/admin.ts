@@ -47,6 +47,13 @@ export const adminApi = {
     return response.data;
   },
 
+  updateDailyUsageLimit: async (id: string, dailyUsageLimit: number | null) => {
+    const response = await api.put(`/api/admin/users/${id}/daily-limit`, {
+      daily_usage_limit: dailyUsageLimit,
+    });
+    return response.data;
+  },
+
   updateUserStatus: async (id: string, status: 'active' | 'suspended' | 'banned') => {
     const response = await api.put(`/api/admin/users/${id}/status`, {
       status,

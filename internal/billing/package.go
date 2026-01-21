@@ -21,37 +21,68 @@ func DeductCost(tx *gorm.DB, userID uuid.UUID, cost float64) error {
 	// Get today's date
 	today := database.GetToday()
 
+	// Ensure daily usage record exists for total usage tracking
+	dailyUsage := models.DailyUsage{
+		UserID:          userID,
+		Date:            today,
+		UsedAmount:      0,
+		TotalUsedAmount: 0,
+	}
+	err := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "date"}},
+		DoNothing: true,
+	}).Create(&dailyUsage).Error
+	if err != nil {
+		return fmt.Errorf("failed to upsert daily usage: %v", err)
+	}
+
+	// Check user daily usage limit
+	var user models.User
+	if err := tx.Select("daily_usage_limit").Where("id = ?", userID).First(&user).Error; err != nil {
+		return fmt.Errorf("failed to get user daily limit: %v", err)
+	}
+
+	if user.DailyUsageLimit != nil {
+		limit := *user.DailyUsageLimit
+		result := tx.Model(&models.DailyUsage{}).
+			Where("user_id = ? AND date = ? AND total_used_amount + ? <= ?", userID, today, cost, limit).
+			Update("total_used_amount", gorm.Expr("total_used_amount + ?", cost))
+		if result.Error != nil {
+			return fmt.Errorf("failed to update daily total usage: %v", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("daily usage limit exceeded")
+		}
+	} else {
+		result := tx.Model(&models.DailyUsage{}).
+			Where("user_id = ? AND date = ?", userID, today).
+			Update("total_used_amount", gorm.Expr("total_used_amount + ?", cost))
+		if result.Error != nil {
+			return fmt.Errorf("failed to update daily total usage: %v", result.Error)
+		}
+	}
+
 	// Check if user has active package
 	var activePackage models.UserPackage
-	err := tx.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
+	err = tx.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
 		userID, "active", today, today).
 		Order("end_date ASC").
 		First(&activePackage).Error
 
 	if err == nil {
 		// User has active package, try to use package quota first
-		// Use upsert to handle concurrent inserts safely
-		dailyUsage := models.DailyUsage{
-			UserID:        userID,
-			UserPackageID: &activePackage.ID,
-			Date:          today,
-			UsedAmount:    0,
-		}
-
-		// Use ON CONFLICT to handle concurrent inserts
-		err = tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "user_id"}, {Name: "date"}},
-			DoNothing: true, // If exists, do nothing (we'll fetch it next)
-		}).Create(&dailyUsage).Error
-
-		if err != nil {
-			return fmt.Errorf("failed to upsert daily usage: %v", err)
-		}
-
 		// Fetch the record (either newly created or existing)
 		err = tx.Where("user_id = ? AND date = ?", userID, today).First(&dailyUsage).Error
 		if err != nil {
 			return fmt.Errorf("failed to get daily usage: %v", err)
+		}
+
+		if dailyUsage.UserPackageID == nil || *dailyUsage.UserPackageID != activePackage.ID {
+			if err := tx.Model(&models.DailyUsage{}).
+				Where("id = ?", dailyUsage.ID).
+				Update("user_package_id", activePackage.ID).Error; err != nil {
+				return fmt.Errorf("failed to update daily usage package: %v", err)
+			}
 		}
 
 		// Calculate remaining quota

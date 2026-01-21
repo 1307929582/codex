@@ -6,6 +6,7 @@ export interface User {
   oauth_provider?: string;
   oauth_id?: string;
   balance: number;
+  daily_usage_limit?: number | null;
   status: string;
   role: string; // user, admin, super_admin
   created_at: string;
@@ -178,6 +179,9 @@ export interface UserPackage {
 export interface DailyUsage {
   date: string;
   used_amount: number;
+  total_used_amount?: number;
+  user_daily_limit?: number | null;
+  user_remaining?: number;
   package?: UserPackage;
   daily_limit?: number;
   remaining?: number;

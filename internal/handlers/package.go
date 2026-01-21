@@ -234,8 +234,18 @@ func GetUserDailyUsage(c *gin.Context) {
 		First(&activePackage)
 
 	response := gin.H{
-		"date":        today,
-		"used_amount": todayUsage.UsedAmount,
+		"date":              today,
+		"used_amount":       todayUsage.UsedAmount,
+		"total_used_amount": todayUsage.TotalUsedAmount,
+		"user_daily_limit":  user.DailyUsageLimit,
+	}
+
+	if user.DailyUsageLimit != nil {
+		remaining := *user.DailyUsageLimit - todayUsage.TotalUsedAmount
+		if remaining < 0 {
+			remaining = 0
+		}
+		response["user_remaining"] = remaining
 	}
 
 	if activePackage != nil {
