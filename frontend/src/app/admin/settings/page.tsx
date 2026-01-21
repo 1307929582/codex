@@ -82,8 +82,7 @@ export default function AdminSettings() {
     },
     onError: (error: any) => {
       setIsSaving(false);
-      const errorMessage = error?.response?.data?.error || error?.message || '保存失败';
-      alert(`保存失败: ${errorMessage}`);
+      alert('保存失败，请稍后重试');
       console.error('Settings update error:', error);
     },
   });

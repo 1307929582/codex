@@ -60,8 +60,7 @@ export default function AccountPage() {
       form.submit();
     } catch (error: any) {
       console.error('Recharge failed:', error);
-      const errorMessage = error?.response?.data?.error || error?.message || '充值失败';
-      alert(`充值失败: ${errorMessage}`);
+      alert('充值失败，请稍后重试');
       setIsProcessing(false);
     }
   };

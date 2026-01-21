@@ -13,7 +13,7 @@ export default function LoginPage() {
       const res = await apiClient.get('/api/auth/linuxdo');
       window.location.href = res.data.url;
     } catch (err: any) {
-      setError(err.response?.data?.error || 'LinuxDo 登录失败');
+      setError('LinuxDo 登录失败，请稍后重试');
     }
   };
 

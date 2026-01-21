@@ -27,7 +27,8 @@ export default function AdminPricingPage() {
       alert('定价更新成功！');
     },
     onError: (error: any) => {
-      alert(`更新失败: ${error?.response?.data?.error || error?.message}`);
+      alert('更新失败，请稍后重试');
+      console.error('Pricing update error:', error);
     },
   });
 
@@ -39,7 +40,8 @@ export default function AdminPricingPage() {
       alert(`批量更新成功！已更新 ${data.updated_count} 个模型的比例`);
     },
     onError: (error: any) => {
-      alert(`批量更新失败: ${error?.response?.data?.error || error?.message}`);
+      alert('批量更新失败，请稍后重试');
+      console.error('Pricing batch update error:', error);
     },
   });
 
@@ -50,7 +52,8 @@ export default function AdminPricingPage() {
       alert('定价已重置为默认值！');
     },
     onError: (error: any) => {
-      alert(`重置失败: ${error?.response?.data?.error || error?.message}`);
+      alert('重置失败，请稍后重试');
+      console.error('Pricing reset error:', error);
     },
   });
 
