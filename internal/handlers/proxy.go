@@ -49,9 +49,12 @@ type OpenAIResponse struct {
 	Model   string `json:"model"`
 	Usage   struct {
 		// ChatGPT API fields
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-		TotalTokens      int `json:"total_tokens"`
+		PromptTokens       int `json:"prompt_tokens"`
+		CompletionTokens   int `json:"completion_tokens"`
+		TotalTokens        int `json:"total_tokens"`
+		PromptTokenDetails struct {
+			CachedTokens int `json:"cached_tokens"`
+		} `json:"prompt_tokens_details"`
 
 		// Codex/Responses API fields
 		InputTokens       int `json:"input_tokens"`
@@ -59,6 +62,9 @@ type OpenAIResponse struct {
 		InputTokenDetails struct {
 			CachedTokens int `json:"cached_tokens"`
 		} `json:"input_tokens_details"`
+		InputTokenDetailsAlt struct {
+			CachedTokens int `json:"cached_tokens"`
+		} `json:"input_token_details"`
 	} `json:"usage"`
 	Choices []struct {
 		Message struct {
@@ -274,6 +280,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 						InputTokenDetails struct {
 							CachedTokens int `json:"cached_tokens"`
 						} `json:"input_tokens_details"`
+						InputTokenDetailsAlt struct {
+							CachedTokens int `json:"cached_tokens"`
+						} `json:"input_token_details"`
 					} `json:"usage"`
 				} `json:"response"`
 			}
@@ -288,6 +297,9 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
 				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
 				lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetails.CachedTokens
+				if lastUsage.CachedTokens == 0 {
+					lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CachedTokens
+				}
 				lastUsage.TotalTokens = codexEvent.Response.Usage.InputTokens + codexEvent.Response.Usage.OutputTokens
 
 				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d",
@@ -302,11 +314,17 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					lastUsage.PromptTokens = chunk.Usage.PromptTokens
 					lastUsage.CompletionTokens = chunk.Usage.CompletionTokens
 					lastUsage.TotalTokens = chunk.Usage.TotalTokens
+					if chunk.Usage.PromptTokenDetails.CachedTokens > 0 {
+						lastUsage.CachedTokens = chunk.Usage.PromptTokenDetails.CachedTokens
+					}
 				} else if chunk.Usage.InputTokens > 0 || chunk.Usage.OutputTokens > 0 {
 					// Direct usage format (non-event)
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
 					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
 					lastUsage.CachedTokens = chunk.Usage.InputTokenDetails.CachedTokens
+					if lastUsage.CachedTokens == 0 {
+						lastUsage.CachedTokens = chunk.Usage.InputTokenDetailsAlt.CachedTokens
+					}
 					lastUsage.TotalTokens = chunk.Usage.InputTokens + chunk.Usage.OutputTokens
 				}
 			}
@@ -368,13 +386,21 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	// Extract token counts (support both ChatGPT and Codex API formats)
 	inputTokens := upstreamResp.Usage.PromptTokens
 	outputTokens := upstreamResp.Usage.CompletionTokens
-	cachedTokens := 0
+	cachedTokens := upstreamResp.Usage.PromptTokenDetails.CachedTokens
 
 	// If ChatGPT fields are empty, try Codex fields
 	if inputTokens == 0 && outputTokens == 0 {
 		inputTokens = upstreamResp.Usage.InputTokens
 		outputTokens = upstreamResp.Usage.OutputTokens
 		cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		if cachedTokens == 0 {
+			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+		}
+	} else if cachedTokens == 0 {
+		cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		if cachedTokens == 0 {
+			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+		}
 	}
 
 	cost, err := calculateCostWithCache(model, inputTokens, outputTokens, cachedTokens)
@@ -443,7 +469,11 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 	// Calculate costs for each token type
 	// Note: cached_tokens in Codex API = cache_read_tokens (tokens read from cache)
 	// These are billed at a discounted rate (typically 10% of input price)
-	inputCost := (float64(inputTokens) / 1000.0) * pricing.InputPricePer1k
+	billableInputTokens := inputTokens - cachedTokens
+	if billableInputTokens < 0 {
+		billableInputTokens = 0
+	}
+	inputCost := (float64(billableInputTokens) / 1000.0) * pricing.InputPricePer1k
 	cacheReadCost := (float64(cachedTokens) / 1000.0) * pricing.CacheReadPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
 
