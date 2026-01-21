@@ -6,7 +6,7 @@ import apiClient from '@/lib/api/client';
 import { packageApi } from '@/lib/api/package';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuthStore } from '@/lib/stores/auth';
 
 export default function DashboardPage() {
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           </div>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="date"
@@ -220,15 +220,12 @@ export default function DashboardPage() {
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                   }}
                 />
-                <Line
-                  type="monotone"
+                <Bar
                   dataKey="value"
-                  stroke="#007aff"
-                  strokeWidth={2}
-                  dot={{ fill: '#007aff', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  fill="#007aff"
+                  radius={[6, 6, 0, 0]}
                 />
-              </LineChart>
+              </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-4 text-right text-sm text-muted-foreground">
