@@ -54,8 +54,8 @@ type OpenAIResponse struct {
 		TotalTokens      int `json:"total_tokens"`
 
 		// Codex/Responses API fields
-		InputTokens  int `json:"input_tokens"`
-		OutputTokens int `json:"output_tokens"`
+		InputTokens       int `json:"input_tokens"`
+		OutputTokens      int `json:"output_tokens"`
 		InputTokenDetails struct {
 			CachedTokens int `json:"cached_tokens"`
 		} `json:"input_tokens_details"`
@@ -130,9 +130,35 @@ func ProxyHandler(c *gin.Context) {
 	}
 }
 
+func selectUpstreamForUser(userID uuid.UUID) (*models.CodexUpstream, error) {
+	upstreamObj, err := upstream.GetSelector().SelectForUser(userID)
+	if err == nil {
+		return upstreamObj, nil
+	}
+
+	var settings models.SystemSettings
+	if err := database.DB.First(&settings).Error; err != nil {
+		return nil, err
+	}
+	if settings.OpenAIAPIKey == "" {
+		return nil, err
+	}
+	baseURL := settings.OpenAIBaseURL
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	}
+
+	return &models.CodexUpstream{
+		Name:    "Settings Fallback Upstream",
+		BaseURL: baseURL,
+		APIKey:  settings.OpenAIAPIKey,
+		Status:  "active",
+	}, nil
+}
+
 func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, requestPath string, startTime time.Time) {
 	// Select upstream for this user (consistent hashing for session affinity)
-	upstreamObj, err := upstream.GetSelector().SelectForUser(user.ID)
+	upstreamObj, err := selectUpstreamForUser(user.ID)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
 		return
@@ -207,6 +233,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	clientDisconnected := false
 
 	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 	for scanner.Scan() {
 		// Check if client disconnected
 		select {
@@ -289,6 +316,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 	if err := scanner.Err(); err != nil {
 		// Stream already started, can't send JSON error
 		// But we should still try to bill for what was sent
+		log.Printf("[Proxy] Stream scan error: %v", err)
 	}
 
 	// Calculate latency
@@ -308,7 +336,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 		// Fallback: estimate tokens if usage info not available
 		// Rough estimate: ~4 chars per token, ~100 chars per chunk
 		estimatedTokens := streamedChunks * 25
-		estimatedInput := estimatedTokens / 10  // Assume 10% input
+		estimatedInput := estimatedTokens / 10 // Assume 10% input
 		estimatedOutput := estimatedTokens - estimatedInput
 
 		cost, err := calculateCostWithCache(model, estimatedInput, estimatedOutput, 0)
@@ -320,7 +348,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.APIKey, reqBody map[string]interface{}, model string, requestPath string, startTime time.Time) {
 	// Select upstream for this user (consistent hashing for session affinity)
-	upstreamObj, err := upstream.GetSelector().SelectForUser(user.ID)
+	upstreamObj, err := selectUpstreamForUser(user.ID)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "no available upstream"})
 		return
@@ -356,6 +384,10 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	}
 
 	if err := recordUsageAndBill(user.ID, apiKey.ID, model, inputTokens, outputTokens, cachedTokens, cost, latencyMs); err != nil {
+		if strings.Contains(err.Error(), "insufficient balance") || strings.Contains(err.Error(), "api key quota exceeded") {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "billing failed"})
 		return
 	}
@@ -441,8 +473,15 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			return err
 		}
 
-		if err := tx.Model(&models.APIKey{}).Where("id = ?", apiKeyID).UpdateColumn("total_usage", gorm.Expr("total_usage + ?", inputTokens+outputTokens)).Error; err != nil {
-			return err
+		totalTokens := inputTokens + outputTokens
+		result := tx.Model(&models.APIKey{}).
+			Where("id = ? AND (quota_limit IS NULL OR total_usage + ? <= quota_limit)", apiKeyID, totalTokens).
+			UpdateColumn("total_usage", gorm.Expr("total_usage + ?", totalTokens))
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return fmt.Errorf("api key quota exceeded")
 		}
 
 		return nil

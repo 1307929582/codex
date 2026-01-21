@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"codex-gateway/internal/config"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
+	"codex-gateway/internal/upstream"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -92,7 +94,48 @@ func SetupInitialize(c *gin.Context) {
 			settings.OpenAIBaseURL = "https://api.openai.com/v1"
 		}
 
-		return tx.Create(&settings).Error
+		if err := tx.Create(&settings).Error; err != nil {
+			return err
+		}
+
+		// Upsert default upstream using provided OpenAI settings
+		var defaultUpstream models.CodexUpstream
+		err := tx.Where("name = ?", "Default Codex Upstream").First(&defaultUpstream).Error
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			defaultUpstream = models.CodexUpstream{
+				Name:        "Default Codex Upstream",
+				BaseURL:     settings.OpenAIBaseURL,
+				APIKey:      settings.OpenAIAPIKey,
+				Priority:    0,
+				Status:      "active",
+				Weight:      1,
+				MaxRetries:  3,
+				Timeout:     120,
+				HealthCheck: "/health",
+			}
+			return tx.Create(&defaultUpstream).Error
+		}
+
+		defaultUpstream.BaseURL = settings.OpenAIBaseURL
+		defaultUpstream.APIKey = settings.OpenAIAPIKey
+		defaultUpstream.Status = "active"
+		if defaultUpstream.Weight == 0 {
+			defaultUpstream.Weight = 1
+		}
+		if defaultUpstream.MaxRetries == 0 {
+			defaultUpstream.MaxRetries = 3
+		}
+		if defaultUpstream.Timeout == 0 {
+			defaultUpstream.Timeout = 120
+		}
+		if defaultUpstream.HealthCheck == "" {
+			defaultUpstream.HealthCheck = "/health"
+		}
+
+		return tx.Save(&defaultUpstream).Error
 	})
 
 	if err != nil {
@@ -122,4 +165,7 @@ func SetupInitialize(c *gin.Context) {
 		"message": "setup completed successfully",
 		"token":   tokenString,
 	})
+
+	// Refresh upstream selector after setup
+	_ = upstream.GetSelector().RefreshUpstreams()
 }

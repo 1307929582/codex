@@ -5,12 +5,18 @@ import (
 	"encoding/hex"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	lastUsedUpdate         sync.Map
+	lastUsedUpdateInterval = 5 * time.Minute
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -45,6 +51,12 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		if dbKey.QuotaLimit != nil && float64(dbKey.TotalUsage) >= *dbKey.QuotaLimit {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": "api key quota exceeded"})
+			c.Abort()
+			return
+		}
+
 		if dbKey.User.Balance <= 0 {
 			// Check for active package
 			today := database.GetToday()
@@ -62,13 +74,15 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Update last_used_at asynchronously with throttling
 		// Use conditional update to prevent stampede writes
-		go func(keyID uint) {
-			now := time.Now()
-			// Conditional update: only update if last_used_at is NULL or older than 5 minutes
-			database.DB.Model(&models.APIKey{}).
-				Where("id = ? AND (last_used_at IS NULL OR last_used_at < ?)", keyID, now.Add(-5*time.Minute)).
-				Update("last_used_at", now)
-		}(dbKey.ID)
+		now := time.Now()
+		if shouldUpdateLastUsed(dbKey.ID, now) {
+			go func(keyID uint, ts time.Time) {
+				// Conditional update: only update if last_used_at is NULL or older than interval
+				database.DB.Model(&models.APIKey{}).
+					Where("id = ? AND (last_used_at IS NULL OR last_used_at < ?)", keyID, ts.Add(-lastUsedUpdateInterval)).
+					Update("last_used_at", ts)
+			}(dbKey.ID, now)
+		}
 
 		c.Set("user", dbKey.User)
 		c.Set("api_key", dbKey)
@@ -80,4 +94,16 @@ func AuthMiddleware() gin.HandlerFunc {
 func HashAPIKey(key string) string {
 	hash := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(hash[:])
+}
+
+func shouldUpdateLastUsed(keyID uint, now time.Time) bool {
+	if value, ok := lastUsedUpdate.Load(keyID); ok {
+		if last, ok := value.(int64); ok {
+			if now.Sub(time.Unix(0, last)) < lastUsedUpdateInterval {
+				return false
+			}
+		}
+	}
+	lastUsedUpdate.Store(keyID, now.UnixNano())
+	return true
 }

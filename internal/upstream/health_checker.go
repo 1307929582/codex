@@ -16,13 +16,13 @@ import (
 
 // HealthChecker manages upstream health checks
 type HealthChecker struct {
-	mu              sync.RWMutex
-	checkInterval   time.Duration
-	timeout         time.Duration
-	maxFailures     int
-	failureCounts   map[uint]int
-	stopCh          chan struct{}
-	wg              sync.WaitGroup
+	mu            sync.RWMutex
+	checkInterval time.Duration
+	timeout       time.Duration
+	maxFailures   int
+	failureCounts map[uint]int
+	stopCh        chan struct{}
+	wg            sync.WaitGroup
 }
 
 var (
@@ -34,9 +34,9 @@ var (
 func GetHealthChecker() *HealthChecker {
 	checkerOnce.Do(func() {
 		healthChecker = &HealthChecker{
-			checkInterval: 60 * time.Second,  // Check every minute
-			timeout:       10 * time.Second,  // 10 second timeout
-			maxFailures:   3,                 // Mark unhealthy after 3 consecutive failures
+			checkInterval: 60 * time.Second, // Check every minute
+			timeout:       10 * time.Second, // 10 second timeout
+			maxFailures:   3,                // Mark unhealthy after 3 consecutive failures
 			failureCounts: make(map[uint]int),
 			stopCh:        make(chan struct{}),
 		}
@@ -93,12 +93,13 @@ func (hc *HealthChecker) checkAllUpstreams() {
 	log.Printf("[HealthCheck] Found %d total upstreams", len(upstreams))
 
 	checkedCount := 0
-	for _, upstream := range upstreams {
+	for i := range upstreams {
+		upstream := &upstreams[i]
 		// Only check active or unhealthy upstreams (skip manually disabled ones)
 		if upstream.Status == "active" || upstream.Status == "unhealthy" {
 			log.Printf("[HealthCheck] Checking upstream: %s (status: %s, base_url: %s)",
 				upstream.Name, upstream.Status, upstream.BaseURL)
-			go hc.checkUpstream(&upstream)
+			go hc.checkUpstream(upstream)
 			checkedCount++
 		} else {
 			log.Printf("[HealthCheck] Skipping upstream: %s (status: %s)", upstream.Name, upstream.Status)

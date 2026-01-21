@@ -26,11 +26,13 @@ type LoginRequest struct {
 func Register(c *gin.Context) {
 	// Check if email registration is enabled
 	var settings models.SystemSettings
+	defaultBalance := 0.0
 	if err := database.DB.First(&settings).Error; err == nil {
 		if !settings.EmailRegistrationEnabled {
 			c.JSON(http.StatusForbidden, gin.H{"error": "email registration is currently disabled"})
 			return
 		}
+		defaultBalance = settings.DefaultBalance
 	}
 
 	var req RegisterRequest
@@ -46,9 +48,12 @@ func Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		Email:        req.Email,
-		PasswordHash: string(hashedPassword),
-		Balance:      0,
+		Email:         req.Email,
+		PasswordHash:  string(hashedPassword),
+		Balance:       defaultBalance,
+		Status:        "active",
+		Role:          "user",
+		OAuthProvider: "email",
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {

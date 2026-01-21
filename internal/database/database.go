@@ -78,6 +78,10 @@ func AutoMigrate() error {
 		&models.SystemSettings{},
 		&models.AdminLog{},
 		&models.CodexUpstream{},
+		&models.Package{},
+		&models.UserPackage{},
+		&models.DailyUsage{},
+		&models.PaymentOrder{},
 	)
 }
 
@@ -90,22 +94,22 @@ func SeedDefaultPricing() error {
 
 	defaultPricing := []models.ModelPricing{
 		{
-			ModelName:          "gpt-4",
-			InputPricePer1k:    0.03,
-			OutputPricePer1k:   0.06,
-			MarkupMultiplier:   1.5,
+			ModelName:        "gpt-4",
+			InputPricePer1k:  0.03,
+			OutputPricePer1k: 0.06,
+			MarkupMultiplier: 1.5,
 		},
 		{
-			ModelName:          "gpt-4-turbo",
-			InputPricePer1k:    0.01,
-			OutputPricePer1k:   0.03,
-			MarkupMultiplier:   1.5,
+			ModelName:        "gpt-4-turbo",
+			InputPricePer1k:  0.01,
+			OutputPricePer1k: 0.03,
+			MarkupMultiplier: 1.5,
 		},
 		{
-			ModelName:          "gpt-3.5-turbo",
-			InputPricePer1k:    0.0005,
-			OutputPricePer1k:   0.0015,
-			MarkupMultiplier:   1.5,
+			ModelName:        "gpt-3.5-turbo",
+			InputPricePer1k:  0.0005,
+			OutputPricePer1k: 0.0015,
+			MarkupMultiplier: 1.5,
 		},
 	}
 

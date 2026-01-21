@@ -65,6 +65,12 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		if user.Status != "active" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "user account is not active"})
+			c.Abort()
+			return
+		}
+
 		c.Set("user", user)
 		c.Next()
 	}

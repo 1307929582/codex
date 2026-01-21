@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
 	"codex-gateway/internal/pricing"
+	"codex-gateway/internal/upstream"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -258,6 +260,10 @@ func AdminUpdateSettings(c *gin.Context) {
 		return
 	}
 
+	if req.OpenAIBaseURL == "" {
+		req.OpenAIBaseURL = "https://api.openai.com/v1"
+	}
+
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
 		var settings models.SystemSettings
 		result := tx.First(&settings)
@@ -293,6 +299,50 @@ func AdminUpdateSettings(c *gin.Context) {
 			}
 		}
 
+		// Keep default upstream in sync with OpenAI settings when key is provided
+		if req.OpenAIAPIKey != "" {
+			var defaultUpstream models.CodexUpstream
+			err := tx.Where("name = ?", "Default Codex Upstream").First(&defaultUpstream).Error
+			if err != nil {
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+				defaultUpstream = models.CodexUpstream{
+					Name:        "Default Codex Upstream",
+					BaseURL:     req.OpenAIBaseURL,
+					APIKey:      req.OpenAIAPIKey,
+					Priority:    0,
+					Status:      "active",
+					Weight:      1,
+					MaxRetries:  3,
+					Timeout:     120,
+					HealthCheck: "/health",
+				}
+				if err := tx.Create(&defaultUpstream).Error; err != nil {
+					return err
+				}
+			} else {
+				defaultUpstream.BaseURL = req.OpenAIBaseURL
+				defaultUpstream.APIKey = req.OpenAIAPIKey
+				defaultUpstream.Status = "active"
+				if defaultUpstream.Weight == 0 {
+					defaultUpstream.Weight = 1
+				}
+				if defaultUpstream.MaxRetries == 0 {
+					defaultUpstream.MaxRetries = 3
+				}
+				if defaultUpstream.Timeout == 0 {
+					defaultUpstream.Timeout = 120
+				}
+				if defaultUpstream.HealthCheck == "" {
+					defaultUpstream.HealthCheck = "/health"
+				}
+				if err := tx.Save(&defaultUpstream).Error; err != nil {
+					return err
+				}
+			}
+		}
+
 		// Log admin action
 		log := models.AdminLog{
 			AdminID:   admin.ID,
@@ -311,6 +361,9 @@ func AdminUpdateSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "settings updated successfully"})
+
+	// Refresh upstream selector after settings update
+	_ = upstream.GetSelector().RefreshUpstreams()
 }
 
 // AdminGetOverview gets system overview statistics
@@ -443,7 +496,6 @@ func AdminGetLogs(c *gin.Context) {
 		},
 	})
 }
-
 
 // AdminGetPricingStatus gets pricing service status
 func AdminGetPricingStatus(c *gin.Context) {

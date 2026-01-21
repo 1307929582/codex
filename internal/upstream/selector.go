@@ -20,6 +20,8 @@ type UpstreamSelector struct {
 	upstreams       []models.CodexUpstream
 	lastRefresh     time.Time
 	refreshInterval time.Duration
+	refreshMu       sync.Mutex
+	refreshing      bool
 }
 
 var (
@@ -62,13 +64,10 @@ func (s *UpstreamSelector) RefreshUpstreams() error {
 // SelectForUser selects an upstream for a specific user using consistent hashing
 // This ensures the same user always gets the same upstream (session affinity)
 func (s *UpstreamSelector) SelectForUser(userID uuid.UUID) (*models.CodexUpstream, error) {
+	s.maybeRefresh()
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	// Auto-refresh if needed
-	if time.Since(s.lastRefresh) > s.refreshInterval {
-		go s.RefreshUpstreams()
-	}
 
 	// Filter active upstreams
 	activeUpstreams := make([]models.CodexUpstream, 0)
@@ -94,6 +93,8 @@ func (s *UpstreamSelector) SelectForUser(userID uuid.UUID) (*models.CodexUpstrea
 
 // SelectWithFallback selects an upstream with fallback to next priority
 func (s *UpstreamSelector) SelectWithFallback(userID uuid.UUID, excludeIDs []uint) (*models.CodexUpstream, error) {
+	s.maybeRefresh()
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -143,4 +144,34 @@ func contains(slice []uint, val uint) bool {
 		}
 	}
 	return false
+}
+
+func (s *UpstreamSelector) maybeRefresh() {
+	s.mu.RLock()
+	lastRefresh := s.lastRefresh
+	refreshInterval := s.refreshInterval
+	s.mu.RUnlock()
+
+	if time.Since(lastRefresh) <= refreshInterval {
+		return
+	}
+
+	s.refreshMu.Lock()
+	if s.refreshing {
+		s.refreshMu.Unlock()
+		return
+	}
+	s.refreshing = true
+	s.refreshMu.Unlock()
+
+	go func() {
+		defer func() {
+			s.refreshMu.Lock()
+			s.refreshing = false
+			s.refreshMu.Unlock()
+		}()
+		if err := s.RefreshUpstreams(); err != nil {
+			log.Printf("[Upstream] Refresh failed: %v", err)
+		}
+	}()
 }

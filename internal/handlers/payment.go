@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // PurchasePackage creates a payment order for package purchase
@@ -70,13 +72,13 @@ func PurchasePackage(c *gin.Context) {
 
 	// Generate Credit payment URL
 	params := map[string]string{
-		"pid":           settings.CreditPID,
-		"type":          "epay",
-		"out_trade_no":  orderNo,
-		"name":          pkg.Name,
-		"money":         fmt.Sprintf("%.2f", pkg.Price),
-		"notify_url":    settings.CreditNotifyURL,
-		"return_url":    settings.CreditReturnURL,
+		"pid":          settings.CreditPID,
+		"type":         "epay",
+		"out_trade_no": orderNo,
+		"name":         pkg.Name,
+		"money":        fmt.Sprintf("%.2f", pkg.Price),
+		"notify_url":   settings.CreditNotifyURL,
+		"return_url":   settings.CreditReturnURL,
 	}
 
 	sign := generateCreditSign(params, settings.CreditKey)
@@ -139,30 +141,28 @@ func CreditNotify(c *gin.Context) {
 		return
 	}
 
-	// Find order
-	var order models.PaymentOrder
-	if err := database.DB.Where("order_no = ?", outTradeNo).First(&order).Error; err != nil {
-		log.Printf("[Payment] Order not found: %s from IP: %s", outTradeNo, c.ClientIP())
-		c.String(http.StatusNotFound, "order not found")
-		return
-	}
-
-	// Check if already processed (idempotency)
-	if order.Status == "paid" {
-		log.Printf("[Payment] Order already paid: %s", outTradeNo)
-		c.String(http.StatusOK, "success")
-		return
-	}
-
-	// Check if order is too old (prevent replay attacks)
-	if time.Since(order.CreatedAt) > 24*time.Hour {
-		log.Printf("[Payment] Order too old: %s, created at: %s", outTradeNo, order.CreatedAt)
-		c.String(http.StatusBadRequest, "order expired")
-		return
-	}
-
 	// Process payment in transaction
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		// Lock order row for idempotent processing
+		var order models.PaymentOrder
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("order_no = ?", outTradeNo).
+			First(&order).Error; err != nil {
+			return err
+		}
+
+		// Check if already processed (idempotency)
+		if order.Status == "paid" {
+			log.Printf("[Payment] Order already paid: %s", outTradeNo)
+			return nil
+		}
+
+		// Check if order is too old (prevent replay attacks)
+		if time.Since(order.CreatedAt) > 24*time.Hour {
+			log.Printf("[Payment] Order too old: %s, created at: %s", outTradeNo, order.CreatedAt)
+			return fmt.Errorf("order expired")
+		}
+
 		// Update order status
 		now := time.Now()
 		order.Status = "paid"
@@ -270,6 +270,15 @@ func CreditNotify(c *gin.Context) {
 	})
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("[Payment] Order not found: %s from IP: %s", outTradeNo, c.ClientIP())
+			c.String(http.StatusNotFound, "order not found")
+			return
+		}
+		if err.Error() == "order expired" {
+			c.String(http.StatusBadRequest, "order expired")
+			return
+		}
 		c.String(http.StatusInternalServerError, "error")
 		return
 	}

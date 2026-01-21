@@ -2,6 +2,8 @@ package database
 
 import (
 	"log"
+
+	"gorm.io/gorm"
 )
 
 // RunMigrations runs all custom database migrations
@@ -15,6 +17,11 @@ func RunMigrations() error {
 
 	// Migration 003: Add LinuxDo OAuth settings
 	if err := migration003AddLinuxDoOAuthSettings(); err != nil {
+		return err
+	}
+
+	// Migration 004: Add performance indexes
+	if err := migration004AddPerformanceIndexes(); err != nil {
 		return err
 	}
 
@@ -102,5 +109,31 @@ func migration003AddLinuxDoOAuthSettings() error {
 	}
 
 	log.Println("Migration 003: Completed successfully")
+	return nil
+}
+
+// migration004AddPerformanceIndexes adds indexes for high-concurrency queries
+func migration004AddPerformanceIndexes() error {
+	log.Println("Running migration 004: Add performance indexes")
+
+	db := DB.Session(&gorm.Session{SkipDefaultTransaction: true})
+
+	sqls := []string{
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_api_keys_key_hash_status ON api_keys(key_hash, status)",
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_packages_active_user_end_date ON user_packages(user_id, end_date) WHERE status = 'active'",
+		"CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_daily_usage_user_date_unique ON daily_usage(user_id, date)",
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_orders_order_no ON payment_orders(order_no)",
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_logs_user_created ON usage_logs(user_id, created_at DESC)",
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_orders_paid_at ON payment_orders(paid_at) WHERE status = 'paid'",
+	}
+
+	for _, sql := range sqls {
+		if err := db.Exec(sql).Error; err != nil {
+			log.Printf("Migration 004 failed at: %s, error: %v", sql, err)
+			return err
+		}
+	}
+
+	log.Println("Migration 004: Completed successfully")
 	return nil
 }
