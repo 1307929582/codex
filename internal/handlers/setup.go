@@ -8,6 +8,7 @@ import (
 	"codex-gateway/internal/config"
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
+	"codex-gateway/internal/ratelimit"
 	"codex-gateway/internal/upstream"
 
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,9 @@ func SetupInitialize(c *gin.Context) {
 		DefaultBalance             float64 `json:"default_balance"`
 		EmailRegistrationEnabled   bool    `json:"email_registration_enabled"`
 		LinuxDoRegistrationEnabled bool    `json:"linuxdo_registration_enabled"`
+		RateLimitEnabled           bool    `json:"rate_limit_enabled"`
+		RateLimitRPM               int     `json:"rate_limit_rpm"`
+		RateLimitBurst             int     `json:"rate_limit_burst"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -84,10 +88,13 @@ func SetupInitialize(c *gin.Context) {
 			Announcement:               req.Announcement,
 			DefaultBalance:             req.DefaultBalance,
 			MinRechargeAmount:          10,
-			EmailRegistrationEnabled:   req.EmailRegistrationEnabled,
+			EmailRegistrationEnabled:   false,
 			LinuxDoRegistrationEnabled: req.LinuxDoRegistrationEnabled,
 			OpenAIAPIKey:               req.OpenAIAPIKey,
 			OpenAIBaseURL:              req.OpenAIBaseURL,
+			RateLimitEnabled:           req.RateLimitEnabled,
+			RateLimitRPM:               req.RateLimitRPM,
+			RateLimitBurst:             req.RateLimitBurst,
 		}
 
 		if settings.OpenAIBaseURL == "" {
@@ -168,4 +175,5 @@ func SetupInitialize(c *gin.Context) {
 
 	// Refresh upstream selector after setup
 	_ = upstream.GetSelector().RefreshUpstreams()
+	ratelimit.LoadFromDB()
 }

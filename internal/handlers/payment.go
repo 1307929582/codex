@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -24,6 +25,14 @@ import (
 func PurchasePackage(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 	packageID := c.Param("id")
+
+	var req struct {
+		CouponCode string `json:"coupon_code"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+		return
+	}
 
 	var pkg models.Package
 	if err := database.DB.First(&pkg, packageID).Error; err != nil {
@@ -49,24 +58,103 @@ func PurchasePackage(c *gin.Context) {
 		return
 	}
 
-	if !settings.CreditEnabled {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "payment is not enabled"})
+	var order models.PaymentOrder
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		couponCode := normalizeCouponCode(req.CouponCode)
+		originalAmount := roundAmount(pkg.Price)
+		payable := originalAmount
+		var coupon *models.Coupon
+		var discount float64
+
+		if couponCode != "" {
+			var err error
+			coupon, err = getCouponForUpdate(tx, couponCode)
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return newUserError("优惠码无效")
+				}
+				return err
+			}
+			if err := validateCoupon(coupon, payable); err != nil {
+				return err
+			}
+			discount = computeCouponDiscount(coupon, payable)
+		}
+
+		payable = roundAmount(payable - discount)
+		if payable < 0 {
+			payable = 0
+		}
+		discount = roundAmount(originalAmount - payable)
+		if discount < 0 {
+			discount = 0
+		}
+
+		if payable > 0 && !settings.CreditEnabled {
+			return newUserError("payment is not enabled")
+		}
+
+		orderNo := fmt.Sprintf("PKG%d%s", time.Now().Unix(), uuid.New().String()[:8])
+		order = models.PaymentOrder{
+			UserID:         user.ID,
+			PackageID:      &pkg.ID,
+			OrderNo:        orderNo,
+			Amount:         payable,
+			OriginalAmount: originalAmount,
+			DiscountAmount: discount,
+			Status:         "pending",
+			PaymentMethod:  "credit",
+			OrderType:      "package_purchase",
+		}
+
+		if coupon != nil {
+			order.CouponID = &coupon.ID
+			order.CouponCode = coupon.Code
+		}
+
+		if payable <= 0 {
+			now := time.Now()
+			order.Status = "paid"
+			if coupon != nil {
+				order.PaymentMethod = "coupon"
+			} else {
+				order.PaymentMethod = "free"
+			}
+			order.PaidAt = &now
+		}
+
+		if err := tx.Create(&order).Error; err != nil {
+			return err
+		}
+
+		if coupon != nil {
+			if err := consumeCoupon(tx, coupon, user.ID, &order, discount); err != nil {
+				return err
+			}
+		}
+
+		if payable <= 0 {
+			return fulfillPackagePurchase(tx, &order)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		if isUserError(err) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})
 		return
 	}
 
-	// Create payment order
-	orderNo := fmt.Sprintf("PKG%d%s", time.Now().Unix(), uuid.New().String()[:8])
-	order := models.PaymentOrder{
-		UserID:        user.ID,
-		PackageID:     &pkg.ID,
-		OrderNo:       orderNo,
-		Amount:        pkg.Price,
-		Status:        "pending",
-		PaymentMethod: "credit",
-	}
-
-	if err := database.DB.Create(&order).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})
+	if order.Amount <= 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"order_no": order.OrderNo,
+			"amount":   order.Amount,
+			"status":   order.Status,
+		})
 		return
 	}
 
@@ -74,9 +162,9 @@ func PurchasePackage(c *gin.Context) {
 	params := map[string]string{
 		"pid":          settings.CreditPID,
 		"type":         "epay",
-		"out_trade_no": orderNo,
+		"out_trade_no": order.OrderNo,
 		"name":         pkg.Name,
-		"money":        fmt.Sprintf("%.2f", pkg.Price),
+		"money":        fmt.Sprintf("%.2f", order.Amount),
 		"notify_url":   settings.CreditNotifyURL,
 		"return_url":   settings.CreditReturnURL,
 	}
@@ -89,8 +177,8 @@ func PurchasePackage(c *gin.Context) {
 	paymentURL := "https://credit.linux.do/epay/pay/submit.php"
 
 	c.JSON(http.StatusOK, gin.H{
-		"order_no":    orderNo,
-		"amount":      pkg.Price,
+		"order_no":    order.OrderNo,
+		"amount":      order.Amount,
 		"payment_url": paymentURL,
 		"params":      params,
 	})
@@ -203,67 +291,17 @@ func CreditNotify(c *gin.Context) {
 
 			log.Printf("[Payment] Balance recharged: user=%s, amount=%.2f, order=%s", order.UserID, order.Amount, order.OrderNo)
 		} else {
-			// This is a package purchase order
-			// Get package info
-			var pkg models.Package
-			if err := tx.First(&pkg, order.PackageID).Error; err != nil {
-				return err
-			}
-
-			// Check and decrement stock (atomic operation)
-			if pkg.Stock != -1 {
-				result := tx.Model(&models.Package{}).
-					Where("id = ? AND (stock = -1 OR stock > 0)", pkg.ID).
-					Updates(map[string]interface{}{
-						"stock":      gorm.Expr("CASE WHEN stock = -1 THEN -1 ELSE stock - 1 END"),
-						"sold_count": gorm.Expr("sold_count + 1"),
-					})
-
-				if result.Error != nil {
-					return fmt.Errorf("failed to update stock: %v", result.Error)
+			if order.OrderType == "package_switch" {
+				if err := fulfillPackageSwitch(tx, &order); err != nil {
+					return err
 				}
-				if result.RowsAffected == 0 {
-					return fmt.Errorf("package is out of stock")
-				}
+				log.Printf("[Payment] Package switched: user=%s, order=%s", order.UserID, order.OrderNo)
 			} else {
-				// Unlimited stock, just increment sold count
-				tx.Model(&models.Package{}).Where("id = ?", pkg.ID).
-					Update("sold_count", gorm.Expr("sold_count + 1"))
+				if err := fulfillPackagePurchase(tx, &order); err != nil {
+					return err
+				}
+				log.Printf("[Payment] Package purchased: user=%s, order=%s", order.UserID, order.OrderNo)
 			}
-
-			// Create user package
-			startDate := time.Now().In(database.AsiaShanghai)
-			endDate := startDate.AddDate(0, 0, pkg.DurationDays)
-
-			userPackage := models.UserPackage{
-				UserID:       order.UserID,
-				PackageID:    pkg.ID,
-				PackageName:  pkg.Name,
-				PackagePrice: pkg.Price,
-				DurationDays: pkg.DurationDays,
-				DailyLimit:   pkg.DailyLimit,
-				StartDate:    startDate,
-				EndDate:      endDate,
-				Status:       "active",
-			}
-
-			if err := tx.Create(&userPackage).Error; err != nil {
-				return err
-			}
-
-			// Create transaction record
-			transaction := models.Transaction{
-				UserID:      order.UserID,
-				Amount:      pkg.Price,
-				Type:        "package_purchase",
-				Description: fmt.Sprintf("购买套餐: %s", pkg.Name),
-			}
-
-			if err := tx.Create(&transaction).Error; err != nil {
-				return err
-			}
-
-			log.Printf("[Payment] Package purchased: user=%s, package=%s, order=%s", order.UserID, pkg.Name, order.OrderNo)
 		}
 
 		return nil
@@ -352,12 +390,14 @@ func CreateRechargeOrder(c *gin.Context) {
 	// Create payment order
 	orderNo := fmt.Sprintf("RCH%d%s", time.Now().Unix(), uuid.New().String()[:8])
 	order := models.PaymentOrder{
-		UserID:        user.ID,
-		PackageID:     nil, // No package for recharge
-		OrderNo:       orderNo,
-		Amount:        req.Amount,
-		Status:        "pending",
-		PaymentMethod: "credit",
+		UserID:         user.ID,
+		PackageID:      nil, // No package for recharge
+		OrderNo:        orderNo,
+		Amount:         req.Amount,
+		OriginalAmount: req.Amount,
+		Status:         "pending",
+		PaymentMethod:  "credit",
+		OrderType:      "recharge",
 	}
 
 	if err := database.DB.Create(&order).Error; err != nil {

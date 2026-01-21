@@ -25,7 +25,8 @@ export default function SetupWizard() {
     // System settings
     announcement: '',
     default_balance: 0,
-    registration_enabled: true,
+    email_registration_enabled: false,
+    linuxdo_registration_enabled: true,
   });
 
   // Check if setup is needed
@@ -312,21 +313,21 @@ export default function SetupWizard() {
               <div className="flex items-center">
                 <input
                   type="checkbox"
-                  id="registration"
-                  checked={formData.registration_enabled}
+                  id="linuxdo-registration"
+                  checked={formData.linuxdo_registration_enabled}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      registration_enabled: e.target.checked,
+                      linuxdo_registration_enabled: e.target.checked,
                     })
                   }
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <label
-                  htmlFor="registration"
+                  htmlFor="linuxdo-registration"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  允许新用户注册
+                  允许 LinuxDo 注册
                 </label>
               </div>
             </div>

@@ -10,6 +10,7 @@ import (
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
 	"codex-gateway/internal/pricing"
+	"codex-gateway/internal/ratelimit"
 	"codex-gateway/internal/upstream"
 
 	"github.com/gin-gonic/gin"
@@ -251,10 +252,14 @@ func AdminGetSettings(c *gin.Context) {
 			Announcement:               "",
 			DefaultBalance:             0,
 			MinRechargeAmount:          10,
-			EmailRegistrationEnabled:   true,
+			EmailRegistrationEnabled:   false,
 			LinuxDoRegistrationEnabled: true,
+			RateLimitEnabled:           false,
+			RateLimitRPM:               0,
+			RateLimitBurst:             0,
 		}
 	}
+	settings.EmailRegistrationEnabled = false
 
 	c.JSON(http.StatusOK, settings)
 }
@@ -268,6 +273,8 @@ func AdminUpdateSettings(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
+
+	req.EmailRegistrationEnabled = false
 
 	if req.OpenAIBaseURL == "" {
 		req.OpenAIBaseURL = "https://api.openai.com/v1"
@@ -302,6 +309,9 @@ func AdminUpdateSettings(c *gin.Context) {
 				"credit_key":                    req.CreditKey,
 				"credit_notify_url":             req.CreditNotifyURL,
 				"credit_return_url":             req.CreditReturnURL,
+				"rate_limit_enabled":            req.RateLimitEnabled,
+				"rate_limit_rpm":                req.RateLimitRPM,
+				"rate_limit_burst":              req.RateLimitBurst,
 			}
 			if err := tx.Model(&settings).Updates(updates).Error; err != nil {
 				return err
@@ -373,6 +383,7 @@ func AdminUpdateSettings(c *gin.Context) {
 
 	// Refresh upstream selector after settings update
 	_ = upstream.GetSelector().RefreshUpstreams()
+	ratelimit.LoadFromDB()
 }
 
 // AdminGetOverview gets system overview statistics

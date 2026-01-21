@@ -123,6 +123,24 @@ export interface SystemSettings {
   credit_key: string;
   credit_notify_url: string;
   credit_return_url: string;
+  rate_limit_enabled: boolean;
+  rate_limit_rpm: number;
+  rate_limit_burst: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  type: 'fixed' | 'percent';
+  value: number;
+  max_uses: number;
+  used_count: number;
+  min_amount: number;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }

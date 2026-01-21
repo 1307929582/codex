@@ -4,12 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"codex-gateway/internal/database"
 	"codex-gateway/internal/models"
+	"codex-gateway/internal/ratelimit"
 
 	"github.com/gin-gonic/gin"
 )
@@ -70,6 +72,12 @@ func AuthMiddleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+		}
+
+		if !ratelimit.Allow(strconv.FormatUint(uint64(dbKey.ID), 10)) {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "rate limit exceeded"})
+			c.Abort()
+			return
 		}
 
 		// Update last_used_at asynchronously with throttling

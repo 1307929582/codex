@@ -8,66 +8,66 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Email        string         `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string         `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
-	Balance      float64        `gorm:"type:decimal(18,6);default:0" json:"balance"`
-	Status       string         `gorm:"type:varchar(20);default:'active'" json:"status"`
-	Role         string         `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
+	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string    `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
+	Balance      float64   `gorm:"type:decimal(18,6);default:0" json:"balance"`
+	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	Role         string    `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
 
 	// OAuth fields
-	OAuthProvider string `gorm:"type:varchar(50)" json:"oauth_provider"` // "linuxdo", "email", etc.
+	OAuthProvider string `gorm:"type:varchar(50)" json:"oauth_provider"`            // "linuxdo", "email", etc.
 	OAuthID       string `gorm:"type:varchar(255);index:idx_oauth" json:"oauth_id"` // Provider's user ID
-	Username      string `gorm:"type:varchar(100)" json:"username"` // Display name from OAuth
-	AvatarURL     string `gorm:"type:varchar(500)" json:"avatar_url"` // Profile picture URL
+	Username      string `gorm:"type:varchar(100)" json:"username"`                 // Display name from OAuth
+	AvatarURL     string `gorm:"type:varchar(500)" json:"avatar_url"`               // Profile picture URL
 
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"-"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type APIKey struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	UserID      uuid.UUID      `gorm:"type:uuid;not null;index:idx_user_id" json:"user_id"`
-	User        User           `gorm:"foreignKey:UserID" json:"-"`
-	KeyHash     string         `gorm:"type:varchar(64);not null;uniqueIndex:idx_key_hash" json:"-"`
-	KeyPrefix   string         `gorm:"type:varchar(16);not null" json:"key_prefix"`
-	Name        string         `gorm:"type:varchar(100)" json:"name"`
-	QuotaLimit  *float64       `gorm:"type:decimal(18,6)" json:"quota_limit"`
-	TotalUsage  int64          `gorm:"default:0" json:"total_usage"`
-	Status      string         `gorm:"type:varchar(20);default:'active'" json:"status"`
-	CreatedAt   time.Time      `json:"created_at"`
-	LastUsedAt  *time.Time     `json:"last_used_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
+	ID         uint           `gorm:"primaryKey" json:"id"`
+	UserID     uuid.UUID      `gorm:"type:uuid;not null;index:idx_user_id" json:"user_id"`
+	User       User           `gorm:"foreignKey:UserID" json:"-"`
+	KeyHash    string         `gorm:"type:varchar(64);not null;uniqueIndex:idx_key_hash" json:"-"`
+	KeyPrefix  string         `gorm:"type:varchar(16);not null" json:"key_prefix"`
+	Name       string         `gorm:"type:varchar(100)" json:"name"`
+	QuotaLimit *float64       `gorm:"type:decimal(18,6)" json:"quota_limit"`
+	TotalUsage int64          `gorm:"default:0" json:"total_usage"`
+	Status     string         `gorm:"type:varchar(20);default:'active'" json:"status"`
+	CreatedAt  time.Time      `json:"created_at"`
+	LastUsedAt *time.Time     `json:"last_used_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type ModelPricing struct {
-	ID                   uint      `gorm:"primaryKey" json:"id"`
-	ModelName            string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"model_name"`
-	InputPricePer1k      float64   `gorm:"type:decimal(10,6);not null" json:"input_price_per_1k"`
-	OutputPricePer1k     float64   `gorm:"type:decimal(10,6);not null" json:"output_price_per_1k"`
-	CacheReadPricePer1k  float64   `gorm:"type:decimal(10,6);default:0" json:"cache_read_price_per_1k"` // Cache read tokens pricing (usually 10% of input price)
-	CacheCreationPricePer1k float64 `gorm:"type:decimal(10,6);default:0" json:"cache_creation_price_per_1k"` // Cache creation tokens pricing
-	MarkupMultiplier     float64   `gorm:"type:decimal(4,2);default:1.5" json:"markup_multiplier"`
-	EffectiveFrom        time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"effective_from"`
+	ID                      uint      `gorm:"primaryKey" json:"id"`
+	ModelName               string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"model_name"`
+	InputPricePer1k         float64   `gorm:"type:decimal(10,6);not null" json:"input_price_per_1k"`
+	OutputPricePer1k        float64   `gorm:"type:decimal(10,6);not null" json:"output_price_per_1k"`
+	CacheReadPricePer1k     float64   `gorm:"type:decimal(10,6);default:0" json:"cache_read_price_per_1k"`     // Cache read tokens pricing (usually 10% of input price)
+	CacheCreationPricePer1k float64   `gorm:"type:decimal(10,6);default:0" json:"cache_creation_price_per_1k"` // Cache creation tokens pricing
+	MarkupMultiplier        float64   `gorm:"type:decimal(4,2);default:1.5" json:"markup_multiplier"`
+	EffectiveFrom           time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"effective_from"`
 }
 
 type UsageLog struct {
-	RequestID    uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"request_id"`
-	UserID       uuid.UUID `gorm:"type:uuid;not null;index:idx_user_created" json:"user_id"`
-	User         User      `gorm:"foreignKey:UserID" json:"-"`
-	APIKeyID     uint      `gorm:"not null;index:idx_api_key_created" json:"api_key_id"`
-	APIKey       APIKey    `gorm:"foreignKey:APIKeyID" json:"-"`
-	Model        string    `gorm:"type:varchar(100)" json:"model"`
-	InputTokens  int       `gorm:"not null" json:"input_tokens"`
-	OutputTokens int       `gorm:"not null" json:"output_tokens"`
-	CachedTokens int       `gorm:"default:0" json:"cached_tokens"` // Cached input tokens
-	CacheCreationTokens int `gorm:"default:0" json:"cache_creation_tokens"`
-	TotalTokens  int       `gorm:"not null" json:"total_tokens"`
-	Cost         float64   `gorm:"type:decimal(18,6);not null" json:"cost"`
-	LatencyMs    int       `json:"latency_ms"`
-	StatusCode   int       `json:"status_code"`
-	CreatedAt    time.Time `gorm:"index:idx_user_created,idx_api_key_created" json:"created_at"`
+	RequestID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"request_id"`
+	UserID              uuid.UUID `gorm:"type:uuid;not null;index:idx_user_created" json:"user_id"`
+	User                User      `gorm:"foreignKey:UserID" json:"-"`
+	APIKeyID            uint      `gorm:"not null;index:idx_api_key_created" json:"api_key_id"`
+	APIKey              APIKey    `gorm:"foreignKey:APIKeyID" json:"-"`
+	Model               string    `gorm:"type:varchar(100)" json:"model"`
+	InputTokens         int       `gorm:"not null" json:"input_tokens"`
+	OutputTokens        int       `gorm:"not null" json:"output_tokens"`
+	CachedTokens        int       `gorm:"default:0" json:"cached_tokens"` // Cached input tokens
+	CacheCreationTokens int       `gorm:"default:0" json:"cache_creation_tokens"`
+	TotalTokens         int       `gorm:"not null" json:"total_tokens"`
+	Cost                float64   `gorm:"type:decimal(18,6);not null" json:"cost"`
+	LatencyMs           int       `json:"latency_ms"`
+	StatusCode          int       `json:"status_code"`
+	CreatedAt           time.Time `gorm:"index:idx_user_created,idx_api_key_created" json:"created_at"`
 }
 
 func (UsageLog) TableName() string {
@@ -84,14 +84,14 @@ type Transaction struct {
 }
 
 type SystemSettings struct {
-	ID                         uint      `gorm:"primaryKey" json:"id"`
-	Announcement               string    `gorm:"type:text" json:"announcement"`
-	DefaultBalance             float64   `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
-	MinRechargeAmount          float64   `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
-	EmailRegistrationEnabled   bool      `gorm:"column:email_registration_enabled;default:true" json:"email_registration_enabled"`
-	LinuxDoRegistrationEnabled bool      `gorm:"column:linux_do_registration_enabled;default:true" json:"linuxdo_registration_enabled"`
-	OpenAIAPIKey               string    `gorm:"type:varchar(255)" json:"openai_api_key"`
-	OpenAIBaseURL              string    `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
+	ID                         uint    `gorm:"primaryKey" json:"id"`
+	Announcement               string  `gorm:"type:text" json:"announcement"`
+	DefaultBalance             float64 `gorm:"type:decimal(18,6);default:0" json:"default_balance"`
+	MinRechargeAmount          float64 `gorm:"type:decimal(18,6);default:10" json:"min_recharge_amount"`
+	EmailRegistrationEnabled   bool    `gorm:"column:email_registration_enabled;default:true" json:"email_registration_enabled"`
+	LinuxDoRegistrationEnabled bool    `gorm:"column:linux_do_registration_enabled;default:true" json:"linuxdo_registration_enabled"`
+	OpenAIAPIKey               string  `gorm:"type:varchar(255)" json:"openai_api_key"`
+	OpenAIBaseURL              string  `gorm:"type:varchar(255);default:'https://api.openai.com/v1'" json:"openai_base_url"`
 
 	// LinuxDo OAuth Settings
 	LinuxDoClientID     string `gorm:"column:linuxdo_client_id;type:varchar(255)" json:"linuxdo_client_id"`
@@ -104,6 +104,11 @@ type SystemSettings struct {
 	CreditKey       string `gorm:"column:credit_key;type:varchar(255)" json:"credit_key"`
 	CreditNotifyURL string `gorm:"column:credit_notify_url;type:varchar(500)" json:"credit_notify_url"`
 	CreditReturnURL string `gorm:"column:credit_return_url;type:varchar(500)" json:"credit_return_url"`
+
+	// Rate Limit Settings
+	RateLimitEnabled bool `gorm:"column:rate_limit_enabled;default:false" json:"rate_limit_enabled"`
+	RateLimitRPM     int  `gorm:"column:rate_limit_rpm;default:0" json:"rate_limit_rpm"`
+	RateLimitBurst   int  `gorm:"column:rate_limit_burst;default:0" json:"rate_limit_burst"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -118,10 +123,25 @@ type Package struct {
 	DailyLimit   float64   `gorm:"type:decimal(18,6);not null" json:"daily_limit"`
 	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
 	SortOrder    int       `gorm:"default:0" json:"sort_order"`
-	Stock        int       `gorm:"default:-1" json:"stock"`        // -1 means unlimited
-	SoldCount    int       `gorm:"default:0" json:"sold_count"`    // Number of packages sold
+	Stock        int       `gorm:"default:-1" json:"stock"`     // -1 means unlimited
+	SoldCount    int       `gorm:"default:0" json:"sold_count"` // Number of packages sold
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type Coupon struct {
+	ID        uint       `gorm:"primaryKey" json:"id"`
+	Code      string     `gorm:"type:varchar(50);uniqueIndex;not null" json:"code"`
+	Type      string     `gorm:"type:varchar(20);not null" json:"type"` // fixed, percent
+	Value     float64    `gorm:"type:decimal(18,6);not null" json:"value"`
+	MaxUses   int        `gorm:"default:0" json:"max_uses"` // 0 means unlimited
+	UsedCount int        `gorm:"default:0" json:"used_count"`
+	MinAmount float64    `gorm:"type:decimal(18,6);default:0" json:"min_amount"`
+	StartsAt  *time.Time `json:"starts_at"`
+	EndsAt    *time.Time `json:"ends_at"`
+	Status    string     `gorm:"type:varchar(20);default:'active'" json:"status"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 type UserPackage struct {
@@ -157,22 +177,40 @@ func (DailyUsage) TableName() string {
 }
 
 type PaymentOrder struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	UserID        uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
-	User          User       `gorm:"foreignKey:UserID" json:"-"`
-	PackageID     *uint      `json:"package_id"`
-	Package       *Package   `gorm:"foreignKey:PackageID" json:"-"`
-	OrderNo       string     `gorm:"type:varchar(64);uniqueIndex;not null" json:"order_no"`
-	OutTradeNo    string     `gorm:"type:varchar(64)" json:"out_trade_no"`
-	TradeNo       string     `gorm:"type:varchar(64)" json:"trade_no"`
-	Amount        float64    `gorm:"type:decimal(18,6);not null" json:"amount"`
-	Status        string     `gorm:"type:varchar(20);default:'pending'" json:"status"`
-	PaymentMethod string     `gorm:"type:varchar(50);default:'credit'" json:"payment_method"`
-	PaymentData   string     `gorm:"type:text" json:"payment_data"`
-	NotifyData    string     `gorm:"type:text" json:"notify_data"`
-	CreatedAt     time.Time  `json:"created_at"`
-	UpdatedAt     time.Time  `json:"updated_at"`
-	PaidAt        *time.Time `json:"paid_at"`
+	ID                      uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID                  uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	User                    User       `gorm:"foreignKey:UserID" json:"-"`
+	PackageID               *uint      `json:"package_id"`
+	Package                 *Package   `gorm:"foreignKey:PackageID" json:"-"`
+	OrderNo                 string     `gorm:"type:varchar(64);uniqueIndex;not null" json:"order_no"`
+	OutTradeNo              string     `gorm:"type:varchar(64)" json:"out_trade_no"`
+	TradeNo                 string     `gorm:"type:varchar(64)" json:"trade_no"`
+	Amount                  float64    `gorm:"type:decimal(18,6);not null" json:"amount"`
+	OriginalAmount          float64    `gorm:"type:decimal(18,6);default:0" json:"original_amount"`
+	DiscountAmount          float64    `gorm:"type:decimal(18,6);default:0" json:"discount_amount"`
+	ProrationCredit         float64    `gorm:"type:decimal(18,6);default:0" json:"proration_credit"`
+	Status                  string     `gorm:"type:varchar(20);default:'pending'" json:"status"`
+	PaymentMethod           string     `gorm:"type:varchar(50);default:'credit'" json:"payment_method"`
+	PaymentData             string     `gorm:"type:text" json:"payment_data"`
+	NotifyData              string     `gorm:"type:text" json:"notify_data"`
+	OrderType               string     `gorm:"type:varchar(30);default:'package_purchase'" json:"order_type"`
+	CouponID                *uint      `json:"coupon_id"`
+	CouponCode              string     `gorm:"type:varchar(50)" json:"coupon_code"`
+	SwitchFromUserPackageID *uuid.UUID `gorm:"type:uuid" json:"switch_from_user_package_id"`
+	CreatedAt               time.Time  `json:"created_at"`
+	UpdatedAt               time.Time  `json:"updated_at"`
+	PaidAt                  *time.Time `json:"paid_at"`
+}
+
+type CouponRedemption struct {
+	ID             uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	CouponID       uint       `gorm:"not null;index" json:"coupon_id"`
+	Coupon         Coupon     `gorm:"foreignKey:CouponID" json:"-"`
+	UserID         uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	OrderID        *uuid.UUID `gorm:"type:uuid" json:"order_id"`
+	OrderNo        string     `gorm:"type:varchar(64)" json:"order_no"`
+	DiscountAmount float64    `gorm:"type:decimal(18,6);not null" json:"discount_amount"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
 type AdminLog struct {
@@ -187,17 +225,17 @@ type AdminLog struct {
 }
 
 type CodexUpstream struct {
-	ID          uint      `gorm:"primaryKey" json:"id"`
-	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
-	BaseURL     string    `gorm:"type:varchar(255);not null" json:"base_url"`
-	APIKey      string    `gorm:"type:varchar(255);not null" json:"api_key"`
-	Priority    int       `gorm:"default:0;index" json:"priority"` // Lower number = higher priority
-	Status      string    `gorm:"type:varchar(20);default:'active'" json:"status"` // active, disabled, unhealthy
-	Weight      int       `gorm:"default:1" json:"weight"` // For load balancing (not used with user affinity)
-	MaxRetries  int       `gorm:"default:3" json:"max_retries"`
-	Timeout     int       `gorm:"default:120" json:"timeout"` // Seconds
-	HealthCheck string    `gorm:"type:varchar(255)" json:"health_check"` // Health check endpoint
+	ID          uint       `gorm:"primaryKey" json:"id"`
+	Name        string     `gorm:"type:varchar(100);not null" json:"name"`
+	BaseURL     string     `gorm:"type:varchar(255);not null" json:"base_url"`
+	APIKey      string     `gorm:"type:varchar(255);not null" json:"api_key"`
+	Priority    int        `gorm:"default:0;index" json:"priority"`                 // Lower number = higher priority
+	Status      string     `gorm:"type:varchar(20);default:'active'" json:"status"` // active, disabled, unhealthy
+	Weight      int        `gorm:"default:1" json:"weight"`                         // For load balancing (not used with user affinity)
+	MaxRetries  int        `gorm:"default:3" json:"max_retries"`
+	Timeout     int        `gorm:"default:120" json:"timeout"`            // Seconds
+	HealthCheck string     `gorm:"type:varchar(255)" json:"health_check"` // Health check endpoint
 	LastChecked *time.Time `json:"last_checked"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }

@@ -228,11 +228,11 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Stream response and collect usage
 	var lastUsage struct {
-		PromptTokens     int
-		CompletionTokens int
-		CachedTokens     int
+		PromptTokens        int
+		CompletionTokens    int
+		CachedTokens        int
 		CacheCreationTokens int
-		TotalTokens      int
+		TotalTokens         int
 	}
 
 	flusher, ok := c.Writer.(http.Flusher)
@@ -316,20 +316,11 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 					cacheCreationTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CacheCreationTokens
 				}
 
-				log.Printf("[DEBUG] Codex response.completed: input_tokens=%d, output_tokens=%d, cache_read_tokens=%d, cache_creation_tokens=%d",
-					codexEvent.Response.Usage.InputTokens,
-					codexEvent.Response.Usage.OutputTokens,
-					cacheReadTokens,
-					cacheCreationTokens)
-
 				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
 				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
 				lastUsage.CachedTokens = cacheReadTokens
 				lastUsage.CacheCreationTokens = cacheCreationTokens
 				lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
-
-				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d, CacheCreationTokens=%d",
-					lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 				continue
 			}
 
@@ -410,12 +401,8 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Bill user after stream completes
 	if lastUsage.TotalTokens > 0 {
-		log.Printf("[DEBUG] Billing: model=%s, input=%d, output=%d, cache_read=%d, cache_create=%d",
-			model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
-
 		cost, err := calculateCostWithCache(model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens)
 		if err == nil {
-			log.Printf("[DEBUG] Cost calculated: $%.6f", cost)
 			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, lastUsage.CacheCreationTokens, cost, latencyMs)
 		}
 	} else if outputBytes > 0 || streamedChunks > 0 {
@@ -608,17 +595,17 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 		totalTokens := resolveTotalTokens(inputTokens, outputTokens, cacheReadTokens, cacheCreationTokens)
 
 		log := models.UsageLog{
-			UserID:       userID,
-			APIKeyID:     apiKeyID,
-			Model:        model,
-			InputTokens:  inputTokens,
-			OutputTokens: outputTokens,
-			CachedTokens: cacheReadTokens,
+			UserID:              userID,
+			APIKeyID:            apiKeyID,
+			Model:               model,
+			InputTokens:         inputTokens,
+			OutputTokens:        outputTokens,
+			CachedTokens:        cacheReadTokens,
 			CacheCreationTokens: cacheCreationTokens,
-			TotalTokens:  totalTokens,
-			Cost:         cost,
-			LatencyMs:    latencyMs,
-			StatusCode:   http.StatusOK,
+			TotalTokens:         totalTokens,
+			Cost:                cost,
+			LatencyMs:           latencyMs,
+			StatusCode:          http.StatusOK,
 		}
 		if err := tx.Create(&log).Error; err != nil {
 			return err

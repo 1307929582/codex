@@ -15,13 +15,15 @@ import {
   Server,
   Package,
   Receipt,
-  FileText
+  FileText,
+  Ticket
 } from 'lucide-react';
 
 const navigation = [
   { name: '控制台', href: '/admin', icon: LayoutDashboard },
   { name: '用户管理', href: '/admin/users', icon: Users },
   { name: '套餐管理', href: '/admin/packages', icon: Package },
+  { name: '优惠码管理', href: '/admin/coupons', icon: Ticket },
   { name: '订单管理', href: '/admin/orders', icon: Receipt },
   { name: '使用记录', href: '/admin/usage', icon: FileText },
   { name: 'Codex 上游', href: '/admin/upstreams', icon: Server },

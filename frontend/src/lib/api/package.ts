@@ -50,13 +50,30 @@ export const packageApi = {
     return response.data;
   },
 
-  purchase: async (id: number) => {
+  purchase: async (id: number, couponCode?: string) => {
     const response = await api.post<{
       order_no: string;
       amount: number;
-      payment_url: string;
-      params: Record<string, string>;
-    }>(`/api/packages/${id}/purchase`);
+      status?: string;
+      payment_url?: string;
+      params?: Record<string, string>;
+    }>(`/api/packages/${id}/purchase`, {
+      coupon_code: couponCode,
+    });
+    return response.data;
+  },
+
+  switchPackage: async (id: number, couponCode?: string) => {
+    const response = await api.post<{
+      order_no: string;
+      amount: number;
+      status?: string;
+      balance_credit?: number;
+      payment_url?: string;
+      params?: Record<string, string>;
+    }>(`/api/packages/${id}/switch`, {
+      coupon_code: couponCode,
+    });
     return response.data;
   },
 

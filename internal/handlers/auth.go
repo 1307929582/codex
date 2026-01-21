@@ -24,6 +24,9 @@ type LoginRequest struct {
 }
 
 func Register(c *gin.Context) {
+	c.JSON(http.StatusForbidden, gin.H{"error": "email registration is disabled, please use LinuxDo login"})
+	return
+
 	// Check if email registration is enabled
 	var settings models.SystemSettings
 	defaultBalance := 0.0
@@ -65,6 +68,9 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
+	c.JSON(http.StatusForbidden, gin.H{"error": "email login is disabled, please use LinuxDo login"})
+	return
+
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

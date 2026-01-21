@@ -15,6 +15,7 @@ import (
 	"codex-gateway/internal/handlers"
 	"codex-gateway/internal/middleware"
 	"codex-gateway/internal/pricing"
+	"codex-gateway/internal/ratelimit"
 	"codex-gateway/internal/upstream"
 
 	"github.com/gin-contrib/cors"
@@ -50,6 +51,8 @@ func main() {
 	if err := database.SeedCodexUpstreams(); err != nil {
 		log.Fatal("Failed to seed Codex upstreams:", err)
 	}
+
+	ratelimit.LoadFromDB()
 
 	// Initialize pricing service
 	pricingService := pricing.GetService()
@@ -161,6 +164,11 @@ func main() {
 			admin.DELETE("/packages/:id", handlers.AdminDeletePackage)
 			admin.PUT("/packages/:id/status", handlers.AdminUpdatePackageStatus)
 
+			// Coupon Management
+			admin.GET("/coupons", handlers.AdminListCoupons)
+			admin.POST("/coupons", handlers.AdminCreateCoupon)
+			admin.PUT("/coupons/:id", handlers.AdminUpdateCoupon)
+
 			// Order Management
 			admin.GET("/orders", handlers.AdminListOrders)
 			admin.GET("/orders/stats", handlers.AdminGetOrderStats)
@@ -186,6 +194,7 @@ func main() {
 			// Package Routes
 			user.GET("/packages", handlers.ListPackages)
 			user.POST("/packages/:id/purchase", handlers.PurchasePackage)
+			user.POST("/packages/:id/switch", handlers.SwitchPackage)
 			user.GET("/user/packages", handlers.GetUserPackages)
 			user.GET("/user/daily-usage", handlers.GetUserDailyUsage)
 

@@ -7,35 +7,69 @@ import { Check, Zap, Clock, DollarSign } from 'lucide-react';
 
 export default function PackagesPage() {
   const [purchasing, setPurchasing] = useState<number | null>(null);
+  const [couponCode, setCouponCode] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['packages'],
     queryFn: () => packageApi.list(),
   });
 
+  const { data: dailyUsage } = useQuery({
+    queryKey: ['daily-usage'],
+    queryFn: () => packageApi.getDailyUsage(),
+  });
+
+  const activePackage = dailyUsage?.package;
+
+  const submitPayment = (result: { payment_url?: string; params?: Record<string, string> }) => {
+    if (!result.payment_url || !result.params) {
+      alert('操作成功');
+      setPurchasing(null);
+      return;
+    }
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = result.payment_url;
+
+    Object.entries(result.params).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  };
+
   const handlePurchase = async (packageId: number) => {
     try {
       setPurchasing(packageId);
-      const result = await packageApi.purchase(packageId);
-
-      // Create form and submit to Credit payment
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = result.payment_url;
-
-      Object.entries(result.params).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
+      const result = await packageApi.purchase(packageId, couponCode.trim() || undefined);
+      submitPayment(result);
     } catch (error) {
       console.error('Purchase failed:', error);
       alert('购买失败，请稍后重试');
+      setPurchasing(null);
+    }
+  };
+
+  const handleSwitch = async (packageId: number) => {
+    try {
+      setPurchasing(packageId);
+      const result = await packageApi.switchPackage(packageId, couponCode.trim() || undefined);
+      if (!result.payment_url) {
+        const creditText = result.balance_credit ? `，余额补偿 $${result.balance_credit.toFixed(2)}` : '';
+        alert(`套餐已切换${creditText}`);
+        setPurchasing(null);
+        return;
+      }
+      submitPayment(result);
+    } catch (error) {
+      console.error('Switch failed:', error);
+      alert('切换失败，请稍后重试');
       setPurchasing(null);
     }
   };
@@ -54,6 +88,32 @@ export default function PackagesPage() {
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900">选择套餐</h1>
         <p className="mt-2 text-zinc-600">选择适合您的套餐，享受每日额度</p>
       </div>
+
+      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900">优惠码</h2>
+            <p className="text-sm text-zinc-500">购买或切换套餐时可使用</p>
+          </div>
+          <input
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            placeholder="输入优惠码"
+            className="w-full rounded-lg border border-zinc-200 px-4 py-2 text-sm md:w-72"
+          />
+        </div>
+      </div>
+
+      {activePackage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+          <h3 className="text-sm font-semibold text-emerald-900">当前套餐</h3>
+          <div className="mt-2 flex flex-col gap-1 text-sm text-emerald-800">
+            <span>{activePackage.package_name}</span>
+            <span>有效期至 {new Date(activePackage.end_date).toLocaleDateString('zh-CN')}</span>
+            <span>切换套餐将按剩余天数折算</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {data?.packages.map((pkg) => (
@@ -114,11 +174,23 @@ export default function PackagesPage() {
 
             {/* Purchase Button */}
             <button
-              onClick={() => handlePurchase(pkg.id)}
-              disabled={purchasing === pkg.id || (pkg.stock !== -1 && pkg.stock <= 0)}
+              onClick={() => (activePackage && activePackage.package_id !== pkg.id ? handleSwitch(pkg.id) : handlePurchase(pkg.id))}
+              disabled={
+                purchasing === pkg.id ||
+                (pkg.stock !== -1 && pkg.stock <= 0) ||
+                (activePackage && activePackage.package_id === pkg.id)
+              }
               className="w-full rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {purchasing === pkg.id ? '处理中...' : pkg.stock !== -1 && pkg.stock <= 0 ? '已售罄' : '立即购买'}
+              {purchasing === pkg.id
+                ? '处理中...'
+                : pkg.stock !== -1 && pkg.stock <= 0
+                  ? '已售罄'
+                  : activePackage && activePackage.package_id === pkg.id
+                    ? '当前套餐'
+                    : activePackage
+                      ? '切换套餐'
+                      : '立即购买'}
             </button>
           </div>
         ))}

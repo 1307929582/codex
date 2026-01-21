@@ -30,7 +30,7 @@ export default function AdminSettings() {
     announcement: '',
     default_balance: 0,
     min_recharge_amount: 10,
-    email_registration_enabled: true,
+    email_registration_enabled: false,
     linuxdo_registration_enabled: true,
     openai_api_key: '',
     openai_base_url: '',
@@ -42,6 +42,9 @@ export default function AdminSettings() {
     credit_key: '',
     credit_notify_url: '',
     credit_return_url: '',
+    rate_limit_enabled: false,
+    rate_limit_rpm: 0,
+    rate_limit_burst: 0,
   });
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function AdminSettings() {
         announcement: settings.announcement || '',
         default_balance: settings.default_balance || 0,
         min_recharge_amount: settings.min_recharge_amount || 10,
-        email_registration_enabled: settings.email_registration_enabled ?? true,
+        email_registration_enabled: false,
         linuxdo_registration_enabled: settings.linuxdo_registration_enabled ?? true,
         openai_api_key: settings.openai_api_key || '',
         openai_base_url: settings.openai_base_url || '',
@@ -62,6 +65,9 @@ export default function AdminSettings() {
         credit_key: settings.credit_key || '',
         credit_notify_url: settings.credit_notify_url || '',
         credit_return_url: settings.credit_return_url || '',
+        rate_limit_enabled: settings.rate_limit_enabled ?? false,
+        rate_limit_rpm: settings.rate_limit_rpm ?? 0,
+        rate_limit_burst: settings.rate_limit_burst ?? 0,
       });
     }
   }, [settings]);
@@ -177,23 +183,6 @@ export default function AdminSettings() {
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <label className="text-sm font-medium text-zinc-700">允许邮箱注册</label>
-             <button
-              type="button"
-              onClick={() => setFormData({ ...formData, email_registration_enabled: !formData.email_registration_enabled })}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                formData.email_registration_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  formData.email_registration_enabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
             <label className="text-sm font-medium text-zinc-700">允许 LinuxDo 注册</label>
              <button
               type="button"
@@ -269,6 +258,60 @@ export default function AdminSettings() {
                 https://codex.zenscaleai.com/api/auth/linuxdo/callback
               </code>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Rate Limit Configuration */}
+      <section className="grid gap-6 md:grid-cols-[200px_1fr] pt-6 border-t border-zinc-100">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900">限流设置</h2>
+          <p className="text-sm text-zinc-500">按 API Key 限制请求速率</p>
+        </div>
+        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between pb-4 border-b border-zinc-100">
+            <div>
+              <label className="text-sm font-medium text-zinc-700">启用限流</label>
+              <p className="text-xs text-zinc-500 mt-1">限制每个 API Key 的请求速率</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, rate_limit_enabled: !formData.rate_limit_enabled })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                formData.rate_limit_enabled ? 'bg-zinc-900' : 'bg-zinc-200'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  formData.rate_limit_enabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">每分钟请求数</label>
+              <input
+                type="number"
+                value={formData.rate_limit_rpm}
+                onChange={(e) => setFormData({ ...formData, rate_limit_rpm: parseInt(e.target.value || '0', 10) })}
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-700">突发额度</label>
+              <input
+                type="number"
+                value={formData.rate_limit_burst}
+                onChange={(e) => setFormData({ ...formData, rate_limit_burst: parseInt(e.target.value || '0', 10) })}
+                className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-zinc-50 p-4 text-xs text-zinc-600">
+            <p>提示：当突发额度为 0 时，将自动使用「每分钟请求数」作为默认突发值。</p>
           </div>
         </div>
       </section>
