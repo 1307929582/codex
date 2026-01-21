@@ -285,6 +285,9 @@ func AdminUpdateSettings(c *gin.Context) {
 		result := tx.First(&settings)
 
 		if result.Error != nil {
+			if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				return result.Error
+			}
 			// Create new settings
 			req.ID = 1
 			if err := tx.Create(&req).Error; err != nil {
@@ -313,7 +316,7 @@ func AdminUpdateSettings(c *gin.Context) {
 				"rate_limit_rpm":                req.RateLimitRPM,
 				"rate_limit_burst":              req.RateLimitBurst,
 			}
-			if err := tx.Model(&settings).Updates(updates).Error; err != nil {
+			if err := tx.Model(&models.SystemSettings{}).Where("id = ?", settings.ID).Updates(updates).Error; err != nil {
 				return err
 			}
 		}
