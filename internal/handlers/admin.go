@@ -444,12 +444,29 @@ func AdminGetUsageChart(c *gin.Context) {
 	case "24h":
 		// Last 24 hours - hourly data
 		twentyFourHoursAgo := now.Add(-24 * time.Hour).UTC()
+		var rawData []UsageData
 		database.DB.Model(&models.UsageLog{}).
 			Select("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD HH24:00') as label, COALESCE(SUM(cost), 0) as cost").
 			Where("created_at >= ?", twentyFourHoursAgo).
 			Group("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD HH24:00')").
 			Order("label").
-			Scan(&usageData)
+			Scan(&rawData)
+
+		costByLabel := make(map[string]float64, len(rawData))
+		for _, item := range rawData {
+			costByLabel[item.Label] = item.Cost
+		}
+
+		endHour := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, shanghaiTZ)
+		usageData = make([]UsageData, 0, 24)
+		for i := 23; i >= 0; i-- {
+			hour := endHour.Add(-time.Duration(i) * time.Hour)
+			label := hour.Format("01-02 15:00")
+			usageData = append(usageData, UsageData{
+				Label: label,
+				Cost:  costByLabel[label],
+			})
+		}
 
 	case "7d":
 		// Last 7 days - daily data
