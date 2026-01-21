@@ -445,9 +445,9 @@ func AdminGetUsageChart(c *gin.Context) {
 		// Last 24 hours - hourly data
 		twentyFourHoursAgo := now.Add(-24 * time.Hour).UTC()
 		database.DB.Model(&models.UsageLog{}).
-			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00') as label, COALESCE(SUM(cost), 0) as cost").
+			Select("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD HH24:00') as label, COALESCE(SUM(cost), 0) as cost").
 			Where("created_at >= ?", twentyFourHoursAgo).
-			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'HH24:00')").
+			Group("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD HH24:00')").
 			Order("label").
 			Scan(&usageData)
 
@@ -455,9 +455,9 @@ func AdminGetUsageChart(c *gin.Context) {
 		// Last 7 days - daily data
 		sevenDaysAgo := now.AddDate(0, 0, -7).UTC()
 		database.DB.Model(&models.UsageLog{}).
-			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
+			Select("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
 			Where("created_at >= ?", sevenDaysAgo).
-			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
+			Group("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
 			Order("label").
 			Scan(&usageData)
 
@@ -465,9 +465,9 @@ func AdminGetUsageChart(c *gin.Context) {
 		// Last 30 days - daily data
 		thirtyDaysAgo := now.AddDate(0, 0, -30).UTC()
 		database.DB.Model(&models.UsageLog{}).
-			Select("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
+			Select("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD') as label, COALESCE(SUM(cost), 0) as cost").
 			Where("created_at >= ?", thirtyDaysAgo).
-			Group("TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
+			Group("TO_CHAR(created_at AT TIME ZONE 'Asia/Shanghai', 'MM-DD')").
 			Order("label").
 			Scan(&usageData)
 	}
