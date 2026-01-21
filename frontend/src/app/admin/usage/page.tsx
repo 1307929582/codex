@@ -19,6 +19,16 @@ export default function AdminUsagePage() {
   const [apiKeyId, setApiKeyId] = useState('');
   const pageSize = 20;
 
+  const getBillableInputTokens = (inputTokens: number, cachedTokens: number) => {
+    if (cachedTokens <= 0) {
+      return inputTokens;
+    }
+    if (cachedTokens > inputTokens) {
+      return inputTokens;
+    }
+    return inputTokens - cachedTokens;
+  };
+
   useEffect(() => {
     setPage(1);
   }, [startDate, endDate, userQuery, model, statusCode, apiKeyId]);
@@ -134,7 +144,7 @@ export default function AdminUsagePage() {
               <TableHead>用户</TableHead>
               <TableHead>模型</TableHead>
               <TableHead>API Key</TableHead>
-              <TableHead>输入</TableHead>
+              <TableHead>计费输入</TableHead>
               <TableHead>输出</TableHead>
               <TableHead>缓存</TableHead>
               <TableHead>总计</TableHead>
@@ -173,7 +183,9 @@ export default function AdminUsagePage() {
                   </TableCell>
                   <TableCell className="font-mono text-xs">{log.model}</TableCell>
                   <TableCell className="text-sm">{log.api_key_id}</TableCell>
-                  <TableCell>{log.input_tokens}</TableCell>
+                  <TableCell>
+                    {getBillableInputTokens(log.input_tokens, log.cached_tokens)}
+                  </TableCell>
                   <TableCell>{log.output_tokens}</TableCell>
                   <TableCell>
                     {log.cached_tokens > 0 ? (

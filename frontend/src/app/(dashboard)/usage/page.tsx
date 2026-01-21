@@ -15,6 +15,16 @@ export default function UsagePage() {
   const [endDate, setEndDate] = useState('');
   const pageSize = 20;
 
+  const getBillableInputTokens = (inputTokens: number, cachedTokens: number) => {
+    if (cachedTokens <= 0) {
+      return inputTokens;
+    }
+    if (cachedTokens > inputTokens) {
+      return inputTokens;
+    }
+    return inputTokens - cachedTokens;
+  };
+
   useEffect(() => {
     setPage(1);
   }, [startDate, endDate]);
@@ -82,7 +92,7 @@ export default function UsagePage() {
             <TableRow>
               <TableHead>时间</TableHead>
               <TableHead>模型</TableHead>
-              <TableHead>输入Token</TableHead>
+              <TableHead>计费输入</TableHead>
               <TableHead>输出Token</TableHead>
               <TableHead>缓存Token</TableHead>
               <TableHead>总Token</TableHead>
@@ -111,7 +121,9 @@ export default function UsagePage() {
                     {new Date(log.created_at).toLocaleString()}
                   </TableCell>
                   <TableCell className="font-mono text-xs">{log.model}</TableCell>
-                  <TableCell>{log.input_tokens}</TableCell>
+                  <TableCell>
+                    {getBillableInputTokens(log.input_tokens, log.cached_tokens)}
+                  </TableCell>
                   <TableCell>{log.output_tokens}</TableCell>
                   <TableCell>
                     {log.cached_tokens > 0 ? (
