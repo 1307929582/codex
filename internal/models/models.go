@@ -8,13 +8,12 @@ import (
 )
 
 type User struct {
-	ID              uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Email           string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash    string    `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
-	Balance         float64   `gorm:"type:decimal(18,6);default:0" json:"balance"`
-	DailyUsageLimit *float64  `gorm:"type:decimal(18,6)" json:"daily_usage_limit"`
-	Status          string    `gorm:"type:varchar(20);default:'active'" json:"status"`
-	Role            string    `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
+	ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Email        string    `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string    `gorm:"type:varchar(255)" json:"-"` // Optional for OAuth users
+	Balance      float64   `gorm:"type:decimal(18,6);default:0" json:"balance"`
+	Status       string    `gorm:"type:varchar(20);default:'active'" json:"status"`
+	Role         string    `gorm:"type:varchar(20);default:'user'" json:"role"` // user, admin, super_admin
 
 	// OAuth fields
 	OAuthProvider string `gorm:"type:varchar(50)" json:"oauth_provider"`            // "linuxdo", "email", etc.
@@ -107,9 +106,10 @@ type SystemSettings struct {
 	CreditReturnURL string `gorm:"column:credit_return_url;type:varchar(500)" json:"credit_return_url"`
 
 	// Rate Limit Settings
-	RateLimitEnabled bool `gorm:"column:rate_limit_enabled;default:false" json:"rate_limit_enabled"`
-	RateLimitRPM     int  `gorm:"column:rate_limit_rpm;default:0" json:"rate_limit_rpm"`
-	RateLimitBurst   int  `gorm:"column:rate_limit_burst;default:0" json:"rate_limit_burst"`
+	RateLimitEnabled    bool     `gorm:"column:rate_limit_enabled;default:false" json:"rate_limit_enabled"`
+	RateLimitRPM        int      `gorm:"column:rate_limit_rpm;default:0" json:"rate_limit_rpm"`
+	RateLimitBurst      int      `gorm:"column:rate_limit_burst;default:0" json:"rate_limit_burst"`
+	UserDailyUsageLimit *float64 `gorm:"column:user_daily_usage_limit;type:decimal(18,6)" json:"user_daily_usage_limit"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

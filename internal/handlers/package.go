@@ -226,6 +226,10 @@ func GetUserDailyUsage(c *gin.Context) {
 	today := database.GetToday()
 	database.DB.Where("user_id = ? AND date = ?", user.ID, today).First(&todayUsage)
 
+	// Get global daily usage limit
+	var settings models.SystemSettings
+	database.DB.Select("user_daily_usage_limit").First(&settings)
+
 	// Get active package
 	var activePackage *models.UserPackage
 	database.DB.Where("user_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
@@ -234,18 +238,18 @@ func GetUserDailyUsage(c *gin.Context) {
 		First(&activePackage)
 
 	response := gin.H{
-		"date":              today,
-		"used_amount":       todayUsage.UsedAmount,
-		"total_used_amount": todayUsage.TotalUsedAmount,
-		"user_daily_limit":  user.DailyUsageLimit,
+		"date":               today,
+		"used_amount":        todayUsage.UsedAmount,
+		"total_used_amount":  todayUsage.TotalUsedAmount,
+		"global_daily_limit": settings.UserDailyUsageLimit,
 	}
 
-	if user.DailyUsageLimit != nil {
-		remaining := *user.DailyUsageLimit - todayUsage.TotalUsedAmount
+	if settings.UserDailyUsageLimit != nil {
+		remaining := *settings.UserDailyUsageLimit - todayUsage.TotalUsedAmount
 		if remaining < 0 {
 			remaining = 0
 		}
-		response["user_remaining"] = remaining
+		response["global_remaining"] = remaining
 	}
 
 	if activePackage != nil {

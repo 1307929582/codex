@@ -64,10 +64,10 @@ export default function DashboardPage() {
   ];
 
   const chartTotal = chartData.reduce((sum: number, item: any) => sum + (item.value || 0), 0);
-  const dailyLimit = dailyUsage?.user_daily_limit ?? null;
+  const dailyLimit = dailyUsage?.global_daily_limit ?? null;
   const totalUsed = dailyUsage?.total_used_amount ?? 0;
   const dailyRemaining =
-    dailyUsage?.user_remaining ?? (dailyLimit !== null ? Math.max(dailyLimit - totalUsed, 0) : 0);
+    dailyUsage?.global_remaining ?? (dailyLimit !== null ? Math.max(dailyLimit - totalUsed, 0) : 0);
 
   if (isLoading) {
     return (
@@ -243,7 +243,7 @@ export default function DashboardPage() {
         <Card className="border-apple-blue/20 bg-white">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-apple-blue">
-              每日总限额
+              全局每日上限
             </CardTitle>
           </CardHeader>
           <CardContent>

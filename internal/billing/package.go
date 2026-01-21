@@ -1,6 +1,7 @@
 package billing
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -36,14 +37,14 @@ func DeductCost(tx *gorm.DB, userID uuid.UUID, cost float64) error {
 		return fmt.Errorf("failed to upsert daily usage: %v", err)
 	}
 
-	// Check user daily usage limit
-	var user models.User
-	if err := tx.Select("daily_usage_limit").Where("id = ?", userID).First(&user).Error; err != nil {
-		return fmt.Errorf("failed to get user daily limit: %v", err)
+	// Check global daily usage limit for all users
+	var settings models.SystemSettings
+	if err := tx.Select("user_daily_usage_limit").First(&settings).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("failed to get daily usage limit: %v", err)
 	}
 
-	if user.DailyUsageLimit != nil {
-		limit := *user.DailyUsageLimit
+	if settings.UserDailyUsageLimit != nil {
+		limit := *settings.UserDailyUsageLimit
 		result := tx.Model(&models.DailyUsage{}).
 			Where("user_id = ? AND date = ? AND total_used_amount + ? <= ?", userID, today, cost, limit).
 			Update("total_used_amount", gorm.Expr("total_used_amount + ?", cost))

@@ -6,7 +6,6 @@ export interface User {
   oauth_provider?: string;
   oauth_id?: string;
   balance: number;
-  daily_usage_limit?: number | null;
   status: string;
   role: string; // user, admin, super_admin
   created_at: string;
@@ -127,6 +126,7 @@ export interface SystemSettings {
   rate_limit_enabled: boolean;
   rate_limit_rpm: number;
   rate_limit_burst: number;
+  user_daily_usage_limit?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -180,8 +180,8 @@ export interface DailyUsage {
   date: string;
   used_amount: number;
   total_used_amount?: number;
-  user_daily_limit?: number | null;
-  user_remaining?: number;
+  global_daily_limit?: number | null;
+  global_remaining?: number;
   package?: UserPackage;
   daily_limit?: number;
   remaining?: number;

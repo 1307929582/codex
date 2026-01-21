@@ -10,6 +10,7 @@ import Link from 'next/link';
 export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
+  const [globalDailyLimit, setGlobalDailyLimit] = useState('');
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['admin', 'settings'],
@@ -69,11 +70,16 @@ export default function AdminSettings() {
         rate_limit_rpm: settings.rate_limit_rpm ?? 0,
         rate_limit_burst: settings.rate_limit_burst ?? 0,
       });
+      setGlobalDailyLimit(
+        settings.user_daily_usage_limit === null || settings.user_daily_usage_limit === undefined
+          ? ''
+          : settings.user_daily_usage_limit.toString()
+      );
     }
   }, [settings]);
 
   const updateMutation = useMutation({
-    mutationFn: () => adminApi.updateSettings(formData),
+    mutationFn: (payload: any) => adminApi.updateSettings(payload),
     onMutate: () => setIsSaving(true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'settings'] });
@@ -87,6 +93,24 @@ export default function AdminSettings() {
     },
   });
 
+  const handleSave = () => {
+    const value = globalDailyLimit.trim();
+    if (value !== '') {
+      const parsed = Number(value);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        alert('请输入有效的每日上限');
+        return;
+      }
+    }
+
+    const parsedLimit = value === '' ? null : Number(value);
+
+    updateMutation.mutate({
+      ...formData,
+      user_daily_usage_limit: parsedLimit,
+    });
+  };
+
   if (isLoading) return <div className="h-64 w-full animate-pulse rounded-xl bg-zinc-100" />;
 
   return (
@@ -97,7 +121,7 @@ export default function AdminSettings() {
           <p className="text-sm text-zinc-500">管理全局系统配置</p>
         </div>
         <button
-          onClick={() => updateMutation.mutate()}
+          onClick={handleSave}
           disabled={isSaving}
           className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50"
         >
@@ -196,6 +220,28 @@ export default function AdminSettings() {
                 }`}
               />
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Usage Limit */}
+      <section className="grid gap-6 md:grid-cols-[200px_1fr] pt-6 border-t border-zinc-100">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-900">用量限制</h2>
+          <p className="text-sm text-zinc-500">对所有用户统一生效</p>
+        </div>
+        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-zinc-700">用户每日最大使用量 ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={globalDailyLimit}
+              onChange={(e) => setGlobalDailyLimit(e.target.value)}
+              placeholder="留空表示不限制"
+              className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+            />
+            <p className="text-xs text-zinc-500">留空表示不限制，0 表示禁止使用</p>
           </div>
         </div>
       </section>
