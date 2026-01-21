@@ -83,7 +83,7 @@ export default function AdminUsagePage() {
           <div className="space-y-1">
             <label className="text-sm text-zinc-600">用户</label>
             <Input
-              placeholder="ID / 邮箱 / 用户名"
+              placeholder="ID / 用户名 / LinuxDo ID"
               value={userQuery}
               onChange={(e) => setUserQuery(e.target.value)}
             />
@@ -164,11 +164,11 @@ export default function AdminUsagePage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-medium text-zinc-900">
-                      {log.user_email || log.user_id}
+                      {log.username || '未设置'}
                     </div>
-                    {log.username && (
-                      <div className="text-xs text-zinc-500">{log.username}</div>
-                    )}
+                    <div className="text-xs text-zinc-500">
+                      LinuxDo ID: {log.linuxdo_id || '未绑定'}
+                    </div>
                     <div className="text-xs text-zinc-400 font-mono">{log.user_id}</div>
                   </TableCell>
                   <TableCell className="font-mono text-xs">{log.model}</TableCell>

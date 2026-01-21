@@ -41,8 +41,8 @@ export interface UsageLog {
 export interface AdminUsageLog {
   request_id: string;
   user_id: string;
-  user_email: string;
   username?: string;
+  linuxdo_id?: string;
   api_key_id: number;
   model: string;
   input_tokens: number;

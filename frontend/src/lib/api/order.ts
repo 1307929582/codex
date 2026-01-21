@@ -6,6 +6,7 @@ export interface PaymentOrder {
   user_id: string;
   user_email: string;
   username?: string;
+  linuxdo_id?: string;
   package_id: number | null;
   amount: number;
   status: string;

@@ -224,7 +224,7 @@ func AdminGetUsageLogs(c *gin.Context) {
 		} else {
 			like := "%" + userFilter + "%"
 			query = query.Joins("JOIN users ON users.id = usage_logs.user_id").
-				Where("users.email ILIKE ? OR users.username ILIKE ?", like, like)
+				Where("users.username ILIKE ? OR users.oauth_id ILIKE ?", like, like)
 		}
 	}
 
@@ -247,8 +247,8 @@ func AdminGetUsageLogs(c *gin.Context) {
 	type AdminUsageLog struct {
 		RequestID    string  `json:"request_id"`
 		UserID       string  `json:"user_id"`
-		UserEmail    string  `json:"user_email"`
 		Username     string  `json:"username"`
+		LinuxDoID    string  `json:"linuxdo_id"`
 		APIKeyID     uint    `json:"api_key_id"`
 		Model        string  `json:"model"`
 		InputTokens  int     `json:"input_tokens"`
@@ -263,11 +263,15 @@ func AdminGetUsageLogs(c *gin.Context) {
 
 	response := make([]AdminUsageLog, 0, len(logs))
 	for _, log := range logs {
+		linuxdoID := ""
+		if log.User.OAuthProvider == "linuxdo" {
+			linuxdoID = log.User.OAuthID
+		}
 		response = append(response, AdminUsageLog{
 			RequestID:    log.RequestID.String(),
 			UserID:       log.UserID.String(),
-			UserEmail:    log.User.Email,
 			Username:     log.User.Username,
+			LinuxDoID:    linuxdoID,
 			APIKeyID:     log.APIKeyID,
 			Model:        log.Model,
 			InputTokens:  log.InputTokens,

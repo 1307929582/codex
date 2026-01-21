@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
                 type="text"
-                placeholder="搜索用户名或邮箱..."
+                placeholder="搜索用户名 / LinuxDo ID / 用户ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-zinc-900 focus:bg-white focus:ring-2 focus:ring-zinc-900/10"
@@ -132,17 +132,20 @@ export default function AdminUsersPage() {
                       {user.avatar_url ? (
                         <img
                           src={user.avatar_url}
-                          alt={user.username || user.email}
+                          alt={user.username || user.oauth_id || '用户'}
                           className="h-8 w-8 rounded-full"
                         />
                       ) : (
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-xs font-medium text-zinc-600">
-                          {(user.username || user.email)[0].toUpperCase()}
+                          {(user.username || user.oauth_id || 'U')[0].toUpperCase()}
                         </div>
                       )}
                       <div>
                         <div className="text-sm font-medium text-zinc-900">
-                          {user.username || user.email}
+                          {user.username || '未设置'}
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          LinuxDo ID: {user.oauth_provider === 'linuxdo' ? user.oauth_id : '未绑定'}
                         </div>
                         <div className="text-xs text-zinc-400">{user.id.slice(0, 8)}...</div>
                       </div>

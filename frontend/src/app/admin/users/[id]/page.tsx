@@ -72,15 +72,9 @@ export default function AdminUserDetailPage() {
                 <dd className="mt-1 text-sm text-gray-900 font-mono">{data.user.id}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">邮箱</dt>
-                <dd className="mt-1 text-sm text-gray-900">{data.user.email}</dd>
+                <dt className="text-sm font-medium text-gray-500">用户名</dt>
+                <dd className="mt-1 text-sm text-gray-900">{data.user.username || '未设置'}</dd>
               </div>
-              {data.user.username && (
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">用户名</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{data.user.username}</dd>
-                </div>
-              )}
               {data.user.oauth_provider && (
                 <div>
                   <dt className="text-sm font-medium text-gray-500">登录方式</dt>
@@ -91,14 +85,12 @@ export default function AdminUserDetailPage() {
                   </dd>
                 </div>
               )}
-              {data.user.oauth_id && (
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    {data.user.oauth_provider === 'linuxdo' ? 'LinuxDo ID' : 'OAuth ID'}
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 font-mono">{data.user.oauth_id}</dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-sm font-medium text-gray-500">LinuxDo ID</dt>
+                <dd className="mt-1 text-sm text-gray-900 font-mono">
+                  {data.user.oauth_provider === 'linuxdo' ? data.user.oauth_id || '未绑定' : '未绑定'}
+                </dd>
+              </div>
               {data.user.avatar_url && (
                 <div className="sm:col-span-2">
                   <dt className="text-sm font-medium text-gray-500">头像</dt>

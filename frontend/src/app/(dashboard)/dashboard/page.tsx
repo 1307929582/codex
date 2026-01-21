@@ -12,6 +12,8 @@ import { useAuthStore } from '@/lib/stores/auth';
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('request');
+  const displayName = user?.username || '未设置';
+  const linuxdoId = user?.oauth_provider === 'linuxdo' ? user?.oauth_id : '';
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['usage-stats'],
@@ -78,7 +80,8 @@ export default function DashboardPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-2xl font-semibold">仪表盘</CardTitle>
           <p className="text-sm text-muted-foreground">
-            欢迎回来，{user?.username || user?.email || 'eqbbzjx'}
+            欢迎回来，{displayName}
+            {linuxdoId && <span className="ml-2 text-xs text-zinc-500">LinuxDo ID: {linuxdoId}</span>}
           </p>
         </CardHeader>
       </Card>

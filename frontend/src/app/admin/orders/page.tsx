@@ -95,7 +95,12 @@ export default function OrdersPage() {
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono">{order.order_no}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {order.username || order.user_email}
+                      <div className="text-sm font-medium text-gray-900">
+                        {order.username || '未设置'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        LinuxDo ID: {order.linuxdo_id || '未绑定'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">¥{order.amount.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap">

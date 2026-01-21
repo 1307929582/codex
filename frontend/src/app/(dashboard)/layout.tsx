@@ -12,6 +12,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { logout, isAuthenticated, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const displayName = user ? user.username || '未设置' : '未登录';
+  const linuxdoId = user?.oauth_provider === 'linuxdo' ? user?.oauth_id : '';
 
   useEffect(() => {
     // Wait for auth store to hydrate from localStorage
@@ -78,8 +80,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           {user && (
-            <div className="mb-2 px-3 py-2 text-sm text-muted-foreground truncate">
-              {user.username || user.email}
+            <div className="mb-2 px-3 py-2 text-sm text-muted-foreground">
+              <div className="truncate">{displayName}</div>
+              <div className="truncate text-xs text-zinc-500">LinuxDo ID: {linuxdoId || '未绑定'}</div>
             </div>
           )}
           <Button variant="outline" className="justify-start" onClick={handleLogout}>

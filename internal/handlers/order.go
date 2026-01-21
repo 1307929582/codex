@@ -64,6 +64,7 @@ func AdminListOrders(c *gin.Context) {
 		UserID        string  `json:"user_id"`
 		UserEmail     string  `json:"user_email"`
 		Username      string  `json:"username"`
+		LinuxDoID     string  `json:"linuxdo_id"`
 		PackageID     *uint   `json:"package_id"`
 		Amount        float64 `json:"amount"`
 		Status        string  `json:"status"`
@@ -80,6 +81,10 @@ func AdminListOrders(c *gin.Context) {
 			paidAtStr := order.PaidAt.Format("2006-01-02 15:04:05")
 			paidAt = &paidAtStr
 		}
+		linuxdoID := ""
+		if order.User.OAuthProvider == "linuxdo" {
+			linuxdoID = order.User.OAuthID
+		}
 
 		response = append(response, OrderResponse{
 			ID:            order.ID.String(),
@@ -87,6 +92,7 @@ func AdminListOrders(c *gin.Context) {
 			UserID:        order.UserID.String(),
 			UserEmail:     order.User.Email,
 			Username:      order.User.Username,
+			LinuxDoID:     linuxdoID,
 			PackageID:     order.PackageID,
 			Amount:        order.Amount,
 			Status:        order.Status,
@@ -111,13 +117,13 @@ func AdminListOrders(c *gin.Context) {
 // AdminGetOrderStats gets order statistics
 func AdminGetOrderStats(c *gin.Context) {
 	var stats struct {
-		TotalOrders    int64   `json:"total_orders"`
-		PendingOrders  int64   `json:"pending_orders"`
-		PaidOrders     int64   `json:"paid_orders"`
-		FailedOrders   int64   `json:"failed_orders"`
-		TotalRevenue   float64 `json:"total_revenue"`
-		TodayRevenue   float64 `json:"today_revenue"`
-		MonthRevenue   float64 `json:"month_revenue"`
+		TotalOrders   int64   `json:"total_orders"`
+		PendingOrders int64   `json:"pending_orders"`
+		PaidOrders    int64   `json:"paid_orders"`
+		FailedOrders  int64   `json:"failed_orders"`
+		TotalRevenue  float64 `json:"total_revenue"`
+		TodayRevenue  float64 `json:"today_revenue"`
+		MonthRevenue  float64 `json:"month_revenue"`
 	}
 
 	// Total orders

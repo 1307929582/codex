@@ -37,6 +37,9 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
+  const displayName = user ? user.username || '未设置' : '未登录';
+  const linuxdoId = user?.oauth_provider === 'linuxdo' ? user?.oauth_id : '';
+  const avatarInitial = (displayName || 'U')[0].toUpperCase();
 
   useEffect(() => {
     setIsLoading(false);
@@ -60,7 +63,10 @@ export default function AdminLayout({
           <ShieldCheck className="mx-auto h-12 w-12 text-red-500" />
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-zinc-900">访问被拒绝</h1>
           <p className="text-zinc-500">您没有权限访问管理员面板</p>
-          <p className="mt-2 text-sm text-zinc-500">当前用户: {user?.email || '未登录'}</p>
+          <p className="mt-2 text-sm text-zinc-500">当前用户: {displayName || '未登录'}</p>
+          <p className="mt-1 text-sm text-zinc-500">
+            LinuxDo ID: {linuxdoId || '未绑定'}
+          </p>
           <p className="mt-1 text-sm text-zinc-500">用户角色: {user?.role || '无'}</p>
           <Link href="/" className="inline-block text-sm font-medium text-blue-600 hover:text-blue-500">
             返回首页 &rarr;
@@ -108,10 +114,11 @@ export default function AdminLayout({
         <div className="absolute bottom-0 w-full border-t border-zinc-100 bg-zinc-50/50 p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-200 text-xs font-medium text-zinc-600">
-              {user.email[0].toUpperCase()}
+              {avatarInitial}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-zinc-900">{user.email}</p>
+              <p className="truncate text-sm font-medium text-zinc-900">{displayName}</p>
+              <p className="truncate text-xs text-zinc-500">LinuxDo ID: {linuxdoId || '未绑定'}</p>
               <p className="truncate text-xs text-zinc-500 capitalize">{user.role.replace('_', ' ')}</p>
             </div>
             <button

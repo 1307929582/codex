@@ -29,7 +29,8 @@ func AdminListUsers(c *gin.Context) {
 	query := database.DB.Model(&models.User{})
 
 	if search != "" {
-		query = query.Where("email LIKE ? OR username LIKE ?", "%"+search+"%", "%"+search+"%")
+		like := "%" + search + "%"
+		query = query.Where("email LIKE ? OR username LIKE ? OR oauth_id LIKE ?", like, like, like)
 	}
 
 	if status != "" {
