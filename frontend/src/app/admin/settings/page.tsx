@@ -21,6 +21,11 @@ export default function AdminSettings() {
     queryFn: () => pricingApi.list(),
   });
 
+  const pricingList = pricingData?.pricing ?? [];
+  const averageMarkup = pricingList.length
+    ? (pricingList.reduce((sum, p) => sum + p.markup_multiplier, 0) / pricingList.length).toFixed(2)
+    : null;
+
   const [formData, setFormData] = useState({
     announcement: '',
     default_balance: 0,
@@ -129,9 +134,7 @@ export default function AdminSettings() {
             <p className="mt-1 text-sm text-emerald-700">
               管理所有模型的定价和价格比例（利润率）。当前平均价格比例：
               <span className="ml-1 font-semibold">
-                {pricingData?.pricing?.length > 0
-                  ? `${(pricingData.pricing.reduce((sum, p) => sum + p.markup_multiplier, 0) / pricingData.pricing.length).toFixed(2)}x`
-                  : '加载中...'}
+                {averageMarkup ? `${averageMarkup}x` : '加载中...'}
               </span>
             </p>
             <Link
