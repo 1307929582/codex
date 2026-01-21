@@ -38,6 +38,23 @@ export interface UsageLog {
   created_at: string;
 }
 
+export interface AdminUsageLog {
+  request_id: string;
+  user_id: string;
+  user_email: string;
+  username?: string;
+  api_key_id: number;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  total_tokens: number;
+  cost: number;
+  latency_ms: number;
+  status_code: number;
+  created_at: string;
+}
+
 export interface UsageStats {
   today_cost: number;
   month_cost: number;

@@ -6,6 +6,7 @@ import type {
   AdminLog,
   PaginationResponse,
   HourlyUsage,
+  AdminUsageLog,
 } from '@/types/api';
 
 export const adminApi = {
@@ -88,6 +89,30 @@ export const adminApi = {
         total_pages: number;
       };
     }>('/api/admin/logs', { params });
+    return response.data;
+  },
+
+  // Usage Logs
+  getUsageLogs: async (params?: {
+    page?: number;
+    page_size?: number;
+    start_date?: string;
+    end_date?: string;
+    user?: string;
+    user_id?: string;
+    model?: string;
+    status_code?: number;
+    api_key_id?: number;
+  }) => {
+    const response = await api.get<{
+      logs: AdminUsageLog[];
+      pagination: {
+        page: number;
+        page_size: number;
+        total: number;
+        total_pages: number;
+      };
+    }>('/api/admin/usage/logs', { params });
     return response.data;
   },
 

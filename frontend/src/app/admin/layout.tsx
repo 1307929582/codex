@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Server,
   Package,
-  Receipt
+  Receipt,
+  FileText
 } from 'lucide-react';
 
 const navigation = [
@@ -22,6 +23,7 @@ const navigation = [
   { name: '用户管理', href: '/admin/users', icon: Users },
   { name: '套餐管理', href: '/admin/packages', icon: Package },
   { name: '订单管理', href: '/admin/orders', icon: Receipt },
+  { name: '使用记录', href: '/admin/usage', icon: FileText },
   { name: 'Codex 上游', href: '/admin/upstreams', icon: Server },
   { name: '系统设置', href: '/admin/settings', icon: Settings },
   { name: '操作日志', href: '/admin/logs', icon: Activity },

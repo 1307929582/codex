@@ -124,6 +124,7 @@ func migration004AddPerformanceIndexes() error {
 		"CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_daily_usage_user_date_unique ON daily_usage(user_id, date)",
 		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_orders_order_no ON payment_orders(order_no)",
 		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_logs_user_created ON usage_logs(user_id, created_at DESC)",
+		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_logs_created_at ON usage_logs(created_at DESC)",
 		"CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_payment_orders_paid_at ON payment_orders(paid_at) WHERE status = 'paid'",
 	}
 

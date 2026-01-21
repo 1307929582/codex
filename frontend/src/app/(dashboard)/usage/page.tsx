@@ -1,21 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function UsagePage() {
   const [page, setPage] = useState(1);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const pageSize = 20;
 
+  useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['usage-logs', page],
+    queryKey: ['usage-logs', page, startDate, endDate],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/usage/logs?page=${page}&page_size=${pageSize}`);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        page_size: pageSize.toString(),
+      });
+      if (startDate) {
+        params.set('start_date', startDate);
+      }
+      if (endDate) {
+        params.set('end_date', endDate);
+      }
+      const res = await apiClient.get(`/api/usage/logs?${params.toString()}`);
       return res.data;
     },
   });
@@ -25,6 +42,38 @@ export default function UsagePage() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">使用记录</h2>
         <p className="text-muted-foreground">查看您的API使用历史</p>
+      </div>
+
+      <div className="rounded-md border bg-white p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="space-y-1">
+            <label className="text-sm text-muted-foreground">开始日期</label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-40"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm text-muted-foreground">结束日期</label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-40"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setStartDate('');
+              setEndDate('');
+            }}
+          >
+            清除筛选
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border bg-white">

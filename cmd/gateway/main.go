@@ -145,6 +145,7 @@ func main() {
 
 			// Logs
 			admin.GET("/logs", handlers.AdminGetLogs)
+			admin.GET("/usage/logs", handlers.AdminGetUsageLogs)
 
 			// Pricing Service Status
 			admin.GET("/pricing/status", handlers.AdminGetPricingStatus)
