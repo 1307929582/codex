@@ -55,8 +55,12 @@ export default function AdminUserDetailPage() {
 
   const handleSaveDailyLimit = () => {
     const value = dailyLimitAmount.trim();
-    const parsed = value === '' ? null : parseFloat(value);
-    if (value !== '' && (isNaN(parsed) || parsed < 0)) {
+    if (value === '') {
+      updateDailyLimitMutation.mutate(null);
+      return;
+    }
+    const parsed = Number(value);
+    if (Number.isNaN(parsed) || parsed < 0) {
       alert('请输入有效的每日上限');
       return;
     }
