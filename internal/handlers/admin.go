@@ -149,11 +149,19 @@ func AdminUpdateBalance(c *gin.Context) {
 		}
 
 		// Create transaction record
+		adminName := admin.Username
+		if adminName == "" {
+			if admin.OAuthProvider == "linuxdo" && admin.OAuthID != "" {
+				adminName = "LinuxDo " + admin.OAuthID
+			} else {
+				adminName = "管理员"
+			}
+		}
 		txn := models.Transaction{
 			UserID:      uid,
 			Amount:      req.Amount,
 			Type:        "admin_adjustment",
-			Description: fmt.Sprintf("Admin adjustment by %s: %s", admin.Email, req.Description),
+			Description: fmt.Sprintf("Admin adjustment by %s: %s", adminName, req.Description),
 		}
 
 		if err := tx.Create(&txn).Error; err != nil {

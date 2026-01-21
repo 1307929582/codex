@@ -4,7 +4,6 @@ export interface PaymentOrder {
   id: string;
   order_no: string;
   user_id: string;
-  user_email: string;
   username?: string;
   linuxdo_id?: string;
   package_id: number | null;
@@ -29,7 +28,8 @@ export interface OrderStats {
 export interface UserPackageAdmin {
   id: string;
   user_id: string;
-  user_email: string;
+  username?: string;
+  linuxdo_id?: string;
   package_id: number;
   package_name: string;
   package_price: number;

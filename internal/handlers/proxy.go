@@ -53,17 +53,23 @@ type OpenAIResponse struct {
 		CompletionTokens   int `json:"completion_tokens"`
 		TotalTokens        int `json:"total_tokens"`
 		PromptTokenDetails struct {
-			CachedTokens int `json:"cached_tokens"`
+			CachedTokens        int `json:"cached_tokens"`
+			CacheReadTokens     int `json:"cache_read_tokens"`
+			CacheCreationTokens int `json:"cache_creation_tokens"`
 		} `json:"prompt_tokens_details"`
 
 		// Codex/Responses API fields
 		InputTokens       int `json:"input_tokens"`
 		OutputTokens      int `json:"output_tokens"`
 		InputTokenDetails struct {
-			CachedTokens int `json:"cached_tokens"`
+			CachedTokens        int `json:"cached_tokens"`
+			CacheReadTokens     int `json:"cache_read_tokens"`
+			CacheCreationTokens int `json:"cache_creation_tokens"`
 		} `json:"input_tokens_details"`
 		InputTokenDetailsAlt struct {
-			CachedTokens int `json:"cached_tokens"`
+			CachedTokens        int `json:"cached_tokens"`
+			CacheReadTokens     int `json:"cache_read_tokens"`
+			CacheCreationTokens int `json:"cache_creation_tokens"`
 		} `json:"input_token_details"`
 	} `json:"usage"`
 	Choices []struct {
@@ -236,6 +242,7 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 	// Track streaming state
 	streamedChunks := 0
+	outputBytes := 0
 	clientDisconnected := false
 
 	scanner := bufio.NewScanner(resp.Body)
@@ -278,10 +285,14 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 						InputTokens       int `json:"input_tokens"`
 						OutputTokens      int `json:"output_tokens"`
 						InputTokenDetails struct {
-							CachedTokens int `json:"cached_tokens"`
+							CachedTokens        int `json:"cached_tokens"`
+							CacheReadTokens     int `json:"cache_read_tokens"`
+							CacheCreationTokens int `json:"cache_creation_tokens"`
 						} `json:"input_tokens_details"`
 						InputTokenDetailsAlt struct {
-							CachedTokens int `json:"cached_tokens"`
+							CachedTokens        int `json:"cached_tokens"`
+							CacheReadTokens     int `json:"cache_read_tokens"`
+							CacheCreationTokens int `json:"cache_creation_tokens"`
 						} `json:"input_token_details"`
 					} `json:"usage"`
 				} `json:"response"`
@@ -289,43 +300,93 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 
 			if err := json.Unmarshal([]byte(data), &codexEvent); err == nil && codexEvent.Type == "response.completed" {
 				// Codex/Responses API format
+				cacheReadTokens := codexEvent.Response.Usage.InputTokenDetails.CacheReadTokens
+				if cacheReadTokens == 0 {
+					cacheReadTokens = codexEvent.Response.Usage.InputTokenDetails.CachedTokens
+				}
+				if cacheReadTokens == 0 {
+					cacheReadTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CacheReadTokens
+					if cacheReadTokens == 0 {
+						cacheReadTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CachedTokens
+					}
+				}
+				cacheCreationTokens := codexEvent.Response.Usage.InputTokenDetails.CacheCreationTokens
+				if cacheCreationTokens == 0 {
+					cacheCreationTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CacheCreationTokens
+				}
+
 				log.Printf("[DEBUG] Codex response.completed: input_tokens=%d, output_tokens=%d, cached_tokens=%d",
 					codexEvent.Response.Usage.InputTokens,
 					codexEvent.Response.Usage.OutputTokens,
-					codexEvent.Response.Usage.InputTokenDetails.CachedTokens)
+					cacheReadTokens)
+				if cacheCreationTokens > 0 {
+					log.Printf("[DEBUG] Codex cache_creation_tokens=%d", cacheCreationTokens)
+				}
 
 				lastUsage.PromptTokens = codexEvent.Response.Usage.InputTokens
 				lastUsage.CompletionTokens = codexEvent.Response.Usage.OutputTokens
-				lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetails.CachedTokens
-				if lastUsage.CachedTokens == 0 {
-					lastUsage.CachedTokens = codexEvent.Response.Usage.InputTokenDetailsAlt.CachedTokens
-				}
-				lastUsage.TotalTokens = codexEvent.Response.Usage.InputTokens + codexEvent.Response.Usage.OutputTokens
+				lastUsage.CachedTokens = cacheReadTokens
+				lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 
 				log.Printf("[DEBUG] Mapped: PromptTokens=%d, CompletionTokens=%d, CachedTokens=%d",
 					lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 				continue
 			}
 
+			// Track streamed output length for fallback billing
+			var deltaEvent struct {
+				Type  string          `json:"type"`
+				Delta json.RawMessage `json:"delta"`
+			}
+			if err := json.Unmarshal([]byte(data), &deltaEvent); err == nil {
+				switch deltaEvent.Type {
+				case "response.output_text.delta":
+					var deltaText string
+					if err := json.Unmarshal(deltaEvent.Delta, &deltaText); err == nil {
+						outputBytes += len(deltaText)
+					}
+				case "response.content_part.delta":
+					var delta struct {
+						Type string `json:"type"`
+						Text string `json:"text"`
+					}
+					if err := json.Unmarshal(deltaEvent.Delta, &delta); err == nil {
+						outputBytes += len(delta.Text)
+					}
+				}
+			}
+
 			// Try ChatGPT format
 			var chunk OpenAIResponse
 			if err := json.Unmarshal([]byte(data), &chunk); err == nil {
+				if len(chunk.Choices) > 0 && chunk.Choices[0].Delta.Content != "" {
+					outputBytes += len(chunk.Choices[0].Delta.Content)
+				}
 				if chunk.Usage.TotalTokens > 0 {
 					lastUsage.PromptTokens = chunk.Usage.PromptTokens
 					lastUsage.CompletionTokens = chunk.Usage.CompletionTokens
-					lastUsage.TotalTokens = chunk.Usage.TotalTokens
-					if chunk.Usage.PromptTokenDetails.CachedTokens > 0 {
-						lastUsage.CachedTokens = chunk.Usage.PromptTokenDetails.CachedTokens
+					cacheReadTokens := chunk.Usage.PromptTokenDetails.CacheReadTokens
+					if cacheReadTokens == 0 {
+						cacheReadTokens = chunk.Usage.PromptTokenDetails.CachedTokens
 					}
+					lastUsage.CachedTokens = cacheReadTokens
+					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 				} else if chunk.Usage.InputTokens > 0 || chunk.Usage.OutputTokens > 0 {
 					// Direct usage format (non-event)
 					lastUsage.PromptTokens = chunk.Usage.InputTokens
 					lastUsage.CompletionTokens = chunk.Usage.OutputTokens
-					lastUsage.CachedTokens = chunk.Usage.InputTokenDetails.CachedTokens
-					if lastUsage.CachedTokens == 0 {
-						lastUsage.CachedTokens = chunk.Usage.InputTokenDetailsAlt.CachedTokens
+					cacheReadTokens := chunk.Usage.InputTokenDetails.CacheReadTokens
+					if cacheReadTokens == 0 {
+						cacheReadTokens = chunk.Usage.InputTokenDetails.CachedTokens
 					}
-					lastUsage.TotalTokens = chunk.Usage.InputTokens + chunk.Usage.OutputTokens
+					if cacheReadTokens == 0 {
+						cacheReadTokens = chunk.Usage.InputTokenDetailsAlt.CacheReadTokens
+						if cacheReadTokens == 0 {
+							cacheReadTokens = chunk.Usage.InputTokenDetailsAlt.CachedTokens
+						}
+					}
+					lastUsage.CachedTokens = cacheReadTokens
+					lastUsage.TotalTokens = resolveTotalTokens(lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens)
 				}
 			}
 		}
@@ -350,12 +411,17 @@ func handleStreamingRequest(c *gin.Context, user models.User, apiKey models.APIK
 			log.Printf("[DEBUG] Cost calculated: $%.6f", cost)
 			_ = recordUsageAndBill(user.ID, apiKey.ID, model, lastUsage.PromptTokens, lastUsage.CompletionTokens, lastUsage.CachedTokens, cost, latencyMs)
 		}
-	} else if streamedChunks > 0 {
+	} else if outputBytes > 0 || streamedChunks > 0 {
 		// Fallback: estimate tokens if usage info not available
-		// Rough estimate: ~4 chars per token, ~100 chars per chunk
-		estimatedTokens := streamedChunks * 25
-		estimatedInput := estimatedTokens / 10 // Assume 10% input
-		estimatedOutput := estimatedTokens - estimatedInput
+		// Approximate: ~4 bytes per token for output text, assume 10% input
+		estimatedOutput := outputBytes / 4
+		if outputBytes%4 != 0 {
+			estimatedOutput++
+		}
+		if estimatedOutput == 0 && streamedChunks > 0 {
+			estimatedOutput = streamedChunks * 10
+		}
+		estimatedInput := estimatedOutput / 10
 
 		cost, err := calculateCostWithCache(model, estimatedInput, estimatedOutput, 0)
 		if err == nil {
@@ -386,20 +452,35 @@ func handleNonStreamingRequest(c *gin.Context, user models.User, apiKey models.A
 	// Extract token counts (support both ChatGPT and Codex API formats)
 	inputTokens := upstreamResp.Usage.PromptTokens
 	outputTokens := upstreamResp.Usage.CompletionTokens
-	cachedTokens := upstreamResp.Usage.PromptTokenDetails.CachedTokens
+	cachedTokens := upstreamResp.Usage.PromptTokenDetails.CacheReadTokens
+	if cachedTokens == 0 {
+		cachedTokens = upstreamResp.Usage.PromptTokenDetails.CachedTokens
+	}
 
 	// If ChatGPT fields are empty, try Codex fields
 	if inputTokens == 0 && outputTokens == 0 {
 		inputTokens = upstreamResp.Usage.InputTokens
 		outputTokens = upstreamResp.Usage.OutputTokens
-		cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		cachedTokens = upstreamResp.Usage.InputTokenDetails.CacheReadTokens
 		if cachedTokens == 0 {
-			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+			cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		}
+		if cachedTokens == 0 {
+			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CacheReadTokens
+			if cachedTokens == 0 {
+				cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+			}
 		}
 	} else if cachedTokens == 0 {
-		cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		cachedTokens = upstreamResp.Usage.InputTokenDetails.CacheReadTokens
 		if cachedTokens == 0 {
-			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+			cachedTokens = upstreamResp.Usage.InputTokenDetails.CachedTokens
+		}
+		if cachedTokens == 0 {
+			cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CacheReadTokens
+			if cachedTokens == 0 {
+				cachedTokens = upstreamResp.Usage.InputTokenDetailsAlt.CachedTokens
+			}
 		}
 	}
 
@@ -456,6 +537,24 @@ func forwardToUpstream(ctx context.Context, reqBody map[string]interface{}, base
 	return &openAIResp, nil
 }
 
+func resolveBillableInputTokens(inputTokens, cacheReadTokens int) int {
+	if cacheReadTokens <= 0 {
+		return inputTokens
+	}
+	if cacheReadTokens > inputTokens {
+		return inputTokens
+	}
+	return inputTokens - cacheReadTokens
+}
+
+func resolveTotalTokens(inputTokens, outputTokens, cacheReadTokens int) int {
+	total := inputTokens + outputTokens
+	if cacheReadTokens > inputTokens {
+		total = inputTokens + outputTokens + cacheReadTokens
+	}
+	return total
+}
+
 func calculateCost(model string, inputTokens, outputTokens int) (float64, error) {
 	return calculateCostWithCache(model, inputTokens, outputTokens, 0)
 }
@@ -469,10 +568,7 @@ func calculateCostWithCache(model string, inputTokens, outputTokens, cachedToken
 	// Calculate costs for each token type
 	// Note: cached_tokens in Codex API = cache_read_tokens (tokens read from cache)
 	// These are billed at a discounted rate (typically 10% of input price)
-	billableInputTokens := inputTokens - cachedTokens
-	if billableInputTokens < 0 {
-		billableInputTokens = 0
-	}
+	billableInputTokens := resolveBillableInputTokens(inputTokens, cachedTokens)
 	inputCost := (float64(billableInputTokens) / 1000.0) * pricing.InputPricePer1k
 	cacheReadCost := (float64(cachedTokens) / 1000.0) * pricing.CacheReadPricePer1k
 	outputCost := (float64(outputTokens) / 1000.0) * pricing.OutputPricePer1k
@@ -487,6 +583,8 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			return err
 		}
 
+		totalTokens := resolveTotalTokens(inputTokens, outputTokens, cachedTokens)
+
 		log := models.UsageLog{
 			UserID:       userID,
 			APIKeyID:     apiKeyID,
@@ -494,7 +592,7 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			InputTokens:  inputTokens,
 			OutputTokens: outputTokens,
 			CachedTokens: cachedTokens,
-			TotalTokens:  inputTokens + outputTokens,
+			TotalTokens:  totalTokens,
 			Cost:         cost,
 			LatencyMs:    latencyMs,
 			StatusCode:   http.StatusOK,
@@ -503,7 +601,6 @@ func recordUsageAndBill(userID uuid.UUID, apiKeyID uint, model string, inputToke
 			return err
 		}
 
-		totalTokens := inputTokens + outputTokens
 		result := tx.Model(&models.APIKey{}).
 			Where("id = ? AND (quota_limit IS NULL OR total_usage + ? <= quota_limit)", apiKeyID, totalTokens).
 			UpdateColumn("total_usage", gorm.Expr("total_usage + ?", totalTokens))

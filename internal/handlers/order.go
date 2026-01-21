@@ -62,7 +62,6 @@ func AdminListOrders(c *gin.Context) {
 		ID            string  `json:"id"`
 		OrderNo       string  `json:"order_no"`
 		UserID        string  `json:"user_id"`
-		UserEmail     string  `json:"user_email"`
 		Username      string  `json:"username"`
 		LinuxDoID     string  `json:"linuxdo_id"`
 		PackageID     *uint   `json:"package_id"`
@@ -90,7 +89,6 @@ func AdminListOrders(c *gin.Context) {
 			ID:            order.ID.String(),
 			OrderNo:       order.OrderNo,
 			UserID:        order.UserID.String(),
-			UserEmail:     order.User.Email,
 			Username:      order.User.Username,
 			LinuxDoID:     linuxdoID,
 			PackageID:     order.PackageID,
@@ -219,7 +217,8 @@ func AdminListUserPackages(c *gin.Context) {
 	type UserPackageResponse struct {
 		ID           string  `json:"id"`
 		UserID       string  `json:"user_id"`
-		UserEmail    string  `json:"user_email"`
+		Username     string  `json:"username"`
+		LinuxDoID    string  `json:"linuxdo_id"`
 		PackageID    uint    `json:"package_id"`
 		PackageName  string  `json:"package_name"`
 		PackagePrice float64 `json:"package_price"`
@@ -233,10 +232,15 @@ func AdminListUserPackages(c *gin.Context) {
 
 	var response []UserPackageResponse
 	for _, up := range userPackages {
+		linuxdoID := ""
+		if up.User.OAuthProvider == "linuxdo" {
+			linuxdoID = up.User.OAuthID
+		}
 		response = append(response, UserPackageResponse{
 			ID:           up.ID.String(),
 			UserID:       up.UserID.String(),
-			UserEmail:    up.User.Email,
+			Username:     up.User.Username,
+			LinuxDoID:    linuxdoID,
 			PackageID:    up.PackageID,
 			PackageName:  up.PackageName,
 			PackagePrice: up.PackagePrice,
