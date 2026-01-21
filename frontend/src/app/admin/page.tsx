@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '@/lib/api/admin';
 import { Users, DollarSign, Activity, Key } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
         <div className="h-[300px]">
           {formattedChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={formattedChartData}>
+              <BarChart data={formattedChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="label"
@@ -133,15 +133,12 @@ export default function AdminDashboard() {
                   }}
                   formatter={(value: number) => [`$${value.toFixed(4)}`, '消费']}
                 />
-                <Line
-                  type="monotone"
+                <Bar
                   dataKey="cost"
-                  stroke="#007aff"
-                  strokeWidth={2}
-                  dot={{ fill: '#007aff', r: 4 }}
-                  activeDot={{ r: 6 }}
+                  fill="#007aff"
+                  radius={[6, 6, 0, 0]}
                 />
-              </LineChart>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50">
